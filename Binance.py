@@ -21,7 +21,14 @@ class Binance:
             'X-MBX-APIKEY': self._api_key
         }
 
-    def get_account_info(self):
+    def getExchangeInfo(self, symbol:str):
+        request_url = "https://api.binance.com/api/v3/exchangeInfo?symbol={}".format(symbol.upper())
+        result = requests.get(request_url, headers=self._headers).json()
+        
+        return result  
+
+
+    def get_account_info(self, asset=None):
 
         request_url = self._prepare_request_data("/api/v3/account", "USER_DATA",{})
         balances = requests.get(request_url, headers=self._headers).json()['balances']
@@ -29,20 +36,24 @@ class Binance:
         result = []
         for balance in balances:
             if float(balance["free"]) != 0 or float(balance["locked"]) != 0:         
+                
+                if asset and balance["asset"].lower() == asset:
+                    return balance
+                
                 result.append(balance)
     
         return result
 
-    def place_order(self, symbol:str, side:str, type:str, quantity:float, price:float, stop_price:float, time_in_force:str, test_mode=None):
-        
+    def place_order(self, symbol:str, side:str, type:str, quantity:float, test_mode=None, **kwargs):
+        # price:float, stop_price:float, time_in_force:str,
         params = {
                 "symbol": symbol.upper(),
                 "side": side.upper(),
                 "type": type.upper(),
-                "timeInForce": time_in_force.upper(),
+                # "timeInForce": time_in_force.upper(),
                 "quantity": quantity,
-                "price": price,
-                "stopPrice": stop_price,
+                # "price": price,
+                # "stopPrice": stop_price,
                 "newOrderRespType": "RESULT"
             }
         endpoint = "/api/v3/order/test" if test_mode == True else "/api/v3/order"
