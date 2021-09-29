@@ -35,7 +35,9 @@ if __name__ == '__main__':
         config_file = sys.argv[1]
     except IndexError:
         config_file = fd.askopenfilename(title="!Please select your config file! : ) ")
-        
+    
+    logger.info("the file {} is being used as api config!!!".format(config_file))
+
     config = configparser.ConfigParser()
     config.read(config_file)
 
@@ -56,12 +58,14 @@ if __name__ == '__main__':
     cancel_current_orders()
     
     # load trade rules
-    # rule_def_file = "/Users/fatalerrortxl/Desktop/test.json"
+    # rule_def_file = "/Users/fatalerrortxl/Desktop/Binance_Trade_Tool/rules/test.json"
     try:
         rule_def_file = sys.argv[2]
     except IndexError:
         rule_def_file = fd.askopenfilename(title="!Please select a rule definition! : ) ")
-
+    
+    logger.info("the file {} is being used as trade rule!!!".format(rule_def_file))
+    
     jsonObj = None
     with open(rule_def_file) as jsonFile:
         jsonObj = json.load(jsonFile)
@@ -77,7 +81,7 @@ if __name__ == '__main__':
         logger.info("Current Rule in USE! - when btc price is lower than {}, {}% of altcoin will be sold".format(btc_price, altcoin_to_sell*100))
 
         while True:
-            time.sleep(15)
+            time.sleep(60)
             current_btc_tp = Taapi.get_typprice(exchange='binance', symbol='BTC/USDT', interval=interval, backtrack=1)
 
             if Decimal(current_btc_tp["value"]) <= Decimal(btc_price):
@@ -96,7 +100,7 @@ if __name__ == '__main__':
 
                     qty = soll_qty if soll_qty <= ist_qty  else ist_qty
 
-                    result = binance.place_order(symbol='{}usdt'.format(asset), side='sell', type='MARKET', quantity=qty, test_mode=True)
+                    result = binance.place_order(symbol='{}usdt'.format(asset), side='sell', type='MARKET', quantity=qty)
                     logger.warning (result)
                     logger.info("{}usdt and {}".format(asset, qty))
                
