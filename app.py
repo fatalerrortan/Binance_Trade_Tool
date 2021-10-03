@@ -43,19 +43,22 @@ if __name__ == '__main__':
 
     logger.info('app started')
 
-    config_file = "/Users/fatalerrortxl/Desktop/config.ini"
-    # try:
-    #     config_file = sys.argv[1]
-    # except IndexError:
-    #     config_file = fd.askopenfilename(title="!Please select your config file! : ) ")
+    # test mode
+    # config_file = "/Users/fatalerrortxl/Desktop/config.ini"
+    
+    try:
+        config_file = sys.argv[1]
+    except IndexError:
+        config_file = fd.askopenfilename(title="!Please select your config file! : ) ")
     
     logger.info("the file {} is being used as api config!!!".format(config_file))
 
     config = configparser.ConfigParser()
     config.read(config_file)
-
-    sell_asset_list = list("doge,reef,enj,vet".split(","))
-    # sell_asset_list = list(input("please input involved assets to SELL with delimiter ',' and without whitespace: ").split(","))
+    
+    # test mode
+    # sell_asset_list = list("doge,reef,enj,vet".split(","))
+    sell_asset_list = list(input("please input involved assets to SELL with delimiter ',' and without whitespace: ").split(","))
     sell_asset_dict = {}
 
     # buy_asset_list = list(input("please input involved assets to BUY with delimiter ',' and without whitespace: ").split(","))
@@ -76,11 +79,12 @@ if __name__ == '__main__':
     cancel_current_orders()
     
     # load trade rules
-    rule_def_file = "/Users/fatalerrortxl/Desktop/Binance_Trade_Tool/rules/test.json"
-    # try:
-    #     rule_def_file = sys.argv[2]
-    # except IndexError:
-    #     rule_def_file = fd.askopenfilename(title="!Please select a rule definition! : ) ")
+    # test mode
+    # rule_def_file = "/Users/fatalerrortxl/Desktop/Binance_Trade_Tool/rules/test.json"
+    try:
+        rule_def_file = sys.argv[2]
+    except IndexError:
+        rule_def_file = fd.askopenfilename(title="!Please select a rule definition! : ) ")
     
     logger.info("the file {} is being used as trade rule!!!".format(rule_def_file))
     
@@ -99,8 +103,7 @@ if __name__ == '__main__':
         logger.info("Current Rule in USE! - when btc price is lower than {}, {}% of altcoin will be sold".format(btc_price, altcoin_to_sell*100))
 
         while True:
-            time.sleep(15)
-            # current_btc_tp = Taapi.get_typprice(exchange='binance', symbol='BTC/USDT', interval=interval, backtrack=1)
+            time.sleep(60)
             current_btc_tp = safe_execute(lambda: Taapi.get_typprice(exchange='binance', symbol='BTC/USDT', interval=interval, backtrack=1)) 
             
             if Decimal(current_btc_tp["value"]) <= Decimal(btc_price):
