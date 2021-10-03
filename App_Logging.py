@@ -19,7 +19,7 @@ def getLogger(fname:str):
     s_handler.setLevel(logging.DEBUG)
     f_handler.setLevel(logging.INFO)
 
-    output_format = '[%(asctime)s] [%(name)s] [%(message)s]'
+    output_format = '[%(asctime)s] [%(levelname)s] [%(name)s] [%(message)s]'
     s_format = logging.Formatter(output_format)
     f_format = logging.Formatter(output_format)
 
