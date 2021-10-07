@@ -22,7 +22,7 @@ def cancel_current_orders():
         symbol = order["symbol"]
         if_cancel = input("-> would u like to cancel this order? \r\n {} \r\n: ".format(order))
         if if_cancel.lower() == "yes":
-            result = binance.cancel_order(symbol, orderId)
+            result = safe_execute(lambda: binance.cancel_order(symbol, orderId))
             logger.info("the current opened order {} - {} was canceled successfuly".format(orderId, symbol))
         else: continue 
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     
     # test mode
     # sell_asset_list = list("doge,reef,enj,vet".split(","))
-    sell_asset_list = list(input("please input involved assets to SELL with delimiter ',' and without whitespace: ").split(","))
+    # sell_asset_list = list(input("please input involved assets to SELL with delimiter ',' and without whitespace: ").split(","))
     sell_asset_dict = {}
 
     # buy_asset_list = list(input("please input involved assets to BUY with delimiter ',' and without whitespace: ").split(","))
@@ -66,14 +66,14 @@ if __name__ == '__main__':
     binance = Binance(config)
 
     # load all asset 
-    balance = binance.get_account_info()  
+    balance = safe_execute(lambda: binance.get_account_info())
 
-    sell_asset_list.append("usdt")
+    # sell_asset_list.append("usdt")
     for currency in balance:
-        if currency["asset"].lower() in sell_asset_list:
-            sell_asset_dict[currency["asset"].lower()] = currency["free"]
-            logger.info(currency)
-    sell_asset_list.remove("usdt")
+        
+        sell_asset_dict[currency["asset"].lower()] = currency["free"]
+        logger.info(currency)
+    # sell_asset_list.remove("usdt")
 
     # cancel current opende orders
     cancel_current_orders()
@@ -99,8 +99,14 @@ if __name__ == '__main__':
     Taapi = Taapi(config)
     for index, rule in jsonObj["sell"].items():
         btc_price = rule["btc"]
-        altcoin_to_sell = Decimal(rule["altcoin"])
-        logger.info("Current Rule in USE! - when btc price is lower than {}, {}% of altcoin will be sold".format(btc_price, altcoin_to_sell*100))
+        altcoins_to_sell = rule["altcoin"]
+        
+        logger.info("Current Rule in USE! - when btc price is lower than {}, the followed altcoin will be sold".format(btc_price))
+        
+        # sell_asset_list = []
+        for coin, percentage in altcoins_to_sell.items():
+            # sell_asset_list.append(coin)
+            logger.info("> {} % of {} will be sold".format(percentage * 100, coin))
 
         while True:
             time.sleep(60)
@@ -109,25 +115,46 @@ if __name__ == '__main__':
             if Decimal(current_btc_tp["value"]) <= Decimal(btc_price):
                 logger.warning("!!!current btc typical price {} is lower than current defined btc price {}. the orders below will be excuted!!!".format(current_btc_tp["value"], btc_price))
 
-                for asset in sell_asset_list:
-                    
-                    asset_pair = asset+"usdt"
+                for coin, percentage in altcoins_to_sell.items():
+
+                    asset_pair = coin+"usdt"
                     raw_precision = safe_execute(lambda: binance.getExchangeInfo(asset_pair))["symbols"][0]["filters"][2]["stepSize"]
                     precision = int(str(Decimal(raw_precision).normalize())[::-1].find("."))
-                    
-                    ist_qty = Decimal(safe_execute(lambda: binance.get_account_info(asset)["free"]))
+
+                    ist_qty = Decimal(safe_execute(lambda: binance.get_account_info(coin)["free"]))
                     ist_qty = round(ist_qty, precision) if not precision == -1 else round(ist_qty, 0)
-                    
-                    soll_qty = Decimal(sell_asset_dict[asset]) * altcoin_to_sell
+
+                    soll_qty = Decimal(sell_asset_dict[coin]) * Decimal(percentage)
                     soll_qty = round(soll_qty, precision) if not precision == -1 else round(soll_qty, 0)
 
                     qty = soll_qty if soll_qty <= ist_qty  else ist_qty
 
                     result = safe_execute(lambda: binance.place_order(symbol=asset_pair, side='sell', type='MARKET', quantity=qty, test_mode=True))
                     logger.warning(result)
-                    logger.info("{} {} was sold!!!".format(qty, asset))
+                    logger.warning("{} % {} - {} was sold!!!".format(percentage * 100 ,coin, qty))
                
                 break
+                    
+                
+                # for asset in sell_asset_list:
+                    
+                #     asset_pair = asset+"usdt"
+                #     raw_precision = safe_execute(lambda: binance.getExchangeInfo(asset_pair))["symbols"][0]["filters"][2]["stepSize"]
+                #     precision = int(str(Decimal(raw_precision).normalize())[::-1].find("."))
+                    
+                #     ist_qty = Decimal(safe_execute(lambda: binance.get_account_info(asset)["free"]))
+                #     ist_qty = round(ist_qty, precision) if not precision == -1 else round(ist_qty, 0)
+                    
+                #     soll_qty = Decimal(sell_asset_dict[asset]) * altcoin_to_sell
+                #     soll_qty = round(soll_qty, precision) if not precision == -1 else round(soll_qty, 0)
+
+                #     qty = soll_qty if soll_qty <= ist_qty  else ist_qty
+
+                #     result = safe_execute(lambda: binance.place_order(symbol=asset_pair, side='sell', type='MARKET', quantity=qty, test_mode=True))
+                #     logger.warning(result)
+                #     logger.info("{} {} was sold!!!".format(qty, asset))
+               
+                # break
             
     logger.warning("All preset prices have been triggered.")
     
