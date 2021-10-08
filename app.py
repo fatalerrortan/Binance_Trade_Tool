@@ -42,9 +42,6 @@ def safe_execute(func):
 if __name__ == '__main__':
 
     logger.info('app started')
-
-    # test mode
-    # config_file = "/Users/fatalerrortxl/Desktop/config.ini"
     
     try:
         config_file = sys.argv[1]
@@ -56,31 +53,22 @@ if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read(config_file)
     
-    # test mode
-    # sell_asset_list = list("doge,reef,enj,vet".split(","))
-    # sell_asset_list = list(input("please input involved assets to SELL with delimiter ',' and without whitespace: ").split(","))
     sell_asset_dict = {}
-
-    # buy_asset_list = list(input("please input involved assets to BUY with delimiter ',' and without whitespace: ").split(","))
 
     binance = Binance(config)
 
     # load all asset 
     balance = safe_execute(lambda: binance.get_account_info())
 
-    # sell_asset_list.append("usdt")
     for currency in balance:
         
         sell_asset_dict[currency["asset"].lower()] = currency["free"]
         logger.info(currency)
-    # sell_asset_list.remove("usdt")
 
     # cancel current opende orders
     cancel_current_orders()
     
     # load trade rules
-    # test mode
-    # rule_def_file = "/Users/fatalerrortxl/Desktop/Binance_Trade_Tool/rules/test.json"
     try:
         rule_def_file = sys.argv[2]
     except IndexError:
@@ -102,10 +90,9 @@ if __name__ == '__main__':
         altcoins_to_sell = rule["altcoin"]
         
         logger.info("Current Rule in USE! - when btc price is lower than {}, the followed altcoin will be sold".format(btc_price))
-        
-        # sell_asset_list = []
+      
         for coin, percentage in altcoins_to_sell.items():
-            # sell_asset_list.append(coin)
+        
             logger.info("> {} % of {} will be sold".format(percentage * 100, coin))
 
         while True:
@@ -134,27 +121,6 @@ if __name__ == '__main__':
                     logger.warning("{} % {} - {} was sold!!!".format(percentage * 100 ,coin, qty))
                
                 break
-                    
-                
-                # for asset in sell_asset_list:
-                    
-                #     asset_pair = asset+"usdt"
-                #     raw_precision = safe_execute(lambda: binance.getExchangeInfo(asset_pair))["symbols"][0]["filters"][2]["stepSize"]
-                #     precision = int(str(Decimal(raw_precision).normalize())[::-1].find("."))
-                    
-                #     ist_qty = Decimal(safe_execute(lambda: binance.get_account_info(asset)["free"]))
-                #     ist_qty = round(ist_qty, precision) if not precision == -1 else round(ist_qty, 0)
-                    
-                #     soll_qty = Decimal(sell_asset_dict[asset]) * altcoin_to_sell
-                #     soll_qty = round(soll_qty, precision) if not precision == -1 else round(soll_qty, 0)
-
-                #     qty = soll_qty if soll_qty <= ist_qty  else ist_qty
-
-                #     result = safe_execute(lambda: binance.place_order(symbol=asset_pair, side='sell', type='MARKET', quantity=qty, test_mode=True))
-                #     logger.warning(result)
-                #     logger.info("{} {} was sold!!!".format(qty, asset))
-               
-                # break
             
     logger.warning("All preset prices have been triggered.")
     
