@@ -25,7 +25,9 @@ def getLogger(fname:str):
 
     s_handler.setFormatter(s_format)
     f_handler.setFormatter(f_format)
-
+    
+    logger.propagate = False
+    
     logger.addHandler(s_handler)
     logger.addHandler(f_handler)
 
