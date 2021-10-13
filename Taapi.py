@@ -1,5 +1,6 @@
 import requests
 import configparser
+import aiohttp
 
 class Taapi:
 
@@ -9,18 +10,24 @@ class Taapi:
         # config.read('config.ini')
         self.api_host = config['taapi']['url']
         self._api_key = config['taapi']['api_key']
+        self.session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False))
 
-    def get_kdj(self, exchange: str, symbol: str, interval: str, period=9, signal=3, backtracks=2):
+    async def get_kdj(self, exchange: str, symbol: str, interval: str, period=9, signal=3, backtracks=2):
         
         api_url= '{}/kdj?secret={}&exchange={}&symbol={}&interval={}&period={}&signal={}&backtracks={}'.format(self.api_host, self._api_key, exchange, symbol, interval, period, signal, backtracks)
-        result = requests.get(api_url).json()
+        # result = await requests.get(api_url).json()
+        async with self.session.get(api_url) as resp:
+            result = await resp.json()
 
         return result
 
-    def get_typprice(self, exchange: str, symbol: str, interval: str, backtrack=1):
+    async def get_typprice(self, exchange: str, symbol: str, interval: str, backtrack=1):
         
         api_url= '{}/typprice?secret={}&exchange={}&symbol={}&interval={}&backtrack={}'.format(self.api_host, self._api_key, exchange, symbol, interval, backtrack)
-        result = requests.get(api_url).json()
+        # result = await requests.get(api_url).json()
+        async with self.session.get(api_url) as resp:
+            result = await resp.json()
+
         return result
 
     

@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import configparser
 import time
+import aiohttp
 
 
 class Binance:
@@ -20,21 +21,28 @@ class Binance:
             "Accept": "*/*",
             'X-MBX-APIKEY': self._api_key
         }
+        self.session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False))
 
-    def getExchangeInfo(self, symbol:str):
+    async def getExchangeInfo(self, symbol:str):
+        
         request_url = "https://api.binance.com/api/v3/exchangeInfo?symbol={}".format(symbol.upper())
-        result = requests.get(request_url, headers=self._headers).json()
+        # result = await requests.get(request_url, headers=self._headers).json()
+        async with self.session.get(request_url) as resp:
+            result = await resp.json()
         
         return result  
 
 
-    def get_account_info(self, asset=None):
+    async def get_account_info(self, asset=None):
 
         request_url = self._prepare_request_data("/api/v3/account", "USER_DATA",{})
-        balances = requests.get(request_url, headers=self._headers).json()['balances']
-        
+        # balances = await requests.get(request_url, headers=self._headers).json()['balances']
+
+        async with self.session.get(request_url, headers=self._headers) as resp:
+            balances = await resp.json()
+            
         result = []
-        for balance in balances:
+        for balance in balances['balances']:
             if float(balance["free"]) != 0 or float(balance["locked"]) != 0:         
                 
                 if asset and balance["asset"].lower() == asset:
@@ -44,7 +52,7 @@ class Binance:
     
         return result
 
-    def place_order(self, symbol:str, side:str, type:str, quantity:float, test_mode=None, **kwargs):
+    async def place_order(self, symbol:str, side:str, type:str, quantity:float, test_mode=None, **kwargs):
         # price:float, stop_price:float, time_in_force:str,
         params = {
                 "symbol": symbol.upper(),
@@ -58,20 +66,26 @@ class Binance:
             }
         endpoint = "/api/v3/order/test" if test_mode == True else "/api/v3/order"
         request_url = self._prepare_request_data(endpoint, "TRADE", params)
-        result = requests.post(request_url, headers=self._headers).json()
+        # result = await requests.post(request_url, headers=self._headers).json()
+        async with self.session.post(request_url, headers=self._headers) as resp:
+            result = await resp.json()
+
         return result
 
-    def cancel_order(self, symbol: str, order_id: int):
+    async def cancel_order(self, symbol: str, order_id: int):
 
         data = {
                 "symbol": symbol.upper(),
                 "orderId": order_id
                 }
         request_url = self._prepare_request_data("/api/v3/order", "TRADE", data)
-        result = requests.delete(request_url, headers=self._headers).json()
+        # result = await requests.delete(request_url, headers=self._headers).json()
+        async with self.session.delete(request_url, headers=self._headers) as resp:
+                    result = await resp.json()
+
         return result
 
-    def get_order_detail(self, symbol: str, order_id: int):
+    async def get_order_detail(self, symbol: str, order_id: int):
     # "status":"EXPIRED",     {FILLED | NEW | EXPIRED(for FOK) | CANCELED}
     
         data = {
@@ -79,12 +93,18 @@ class Binance:
                 "orderId": order_id
                 }
         request_url = self._prepare_request_data("/api/v3/order", "USER_DATA", data)
-        result = requests.get(request_url, headers=self._headers).json()
+        # result = await requests.get(request_url, headers=self._headers).json()
+        async with self.session.get(request_url, headers=self._headers) as resp:
+            result = await resp.json()
+
         return result
 
-    def get_open_orders(self):
+    async def get_open_orders(self):
         request_url = self._prepare_request_data("/api/v3/openOrders", "USER_DATA", {})
-        result = requests.get(request_url, headers=self._headers).json()
+        # result = await requests.get(request_url, headers=self._headers).json()
+        async with self.session.get(request_url, headers=self._headers) as resp:
+            result = await resp.json()
+
         return result
 
     def _prepare_request_data(self, uri: str, auth_type: str, params: dict):
