@@ -4,6 +4,7 @@ import hmac
 import configparser
 import time
 import aiohttp
+from typing import Union
 
 
 class Binance:
@@ -51,6 +52,23 @@ class Binance:
                 result.append(balance)
     
         return result
+
+    async def get_current_pirce(self, asset: str) -> Union[int, float]:
+        """
+
+        Args:
+            asset (str): [coin name]
+
+        Returns:
+            Union[int, float]: [current price of given coin usdt pair]
+        """
+
+        request_url = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(asset.upper())
+        # balances = await requests.get(request_url, headers=self._headers).json()['balances']    
+        async with self.session.get(request_url, headers=self._headers) as resp:
+            result = await resp.json()
+    
+        return result["price"]
 
     async def place_order(self, symbol:str, side:str, type:str, quantity:float, test_mode=None, **kwargs):
         # price:float, stop_price:float, time_in_force:str,
