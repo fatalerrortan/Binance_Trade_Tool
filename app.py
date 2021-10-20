@@ -67,11 +67,13 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
             logger.info("[sell] -> {} % of {} will be sold".format(percentage * 100, coin))
 
         while True:
-            await asyncio.sleep(15)
-            current_btc_tp = await safe_execute(lambda: Taapi.get_typprice(exchange='binance', symbol='BTC/USDT', interval=interval, backtrack=1)) 
-            logger.debug("[sell] typical price of last {} is {} usdt".format(interval, current_btc_tp["value"]))
-            if Decimal(current_btc_tp["value"]) <= Decimal(ruled_btc_price):
-                logger.info("[sell] current btc typical price {} usdt is lower than current defined btc price {} usdt. the orders below will be excuted!!!".format(current_btc_tp["value"], ruled_btc_price))
+            await asyncio.sleep(60)
+            current_btc_tp = await safe_execute(lambda: Taapi.get_typprice(exchange='binance', symbol='BTC/USDT', interval=interval, backtracks=3)) 
+            current_btc_tp = (current_btc_tp[1]["value"] + current_btc_tp[2]["value"]) / 2
+
+            logger.debug("[sell] average btc typical price of last two {} is {} usdt".format(interval, current_btc_tp))
+            if Decimal(current_btc_tp) <= Decimal(ruled_btc_price):
+                logger.info("[sell] current average btc typical price {} usdt is lower than current defined btc price {} usdt. the orders below will be excuted!!!".format(current_btc_tp, ruled_btc_price))
 
                 for coin, percentage in filtered_altcoins_to_sell.items():
 

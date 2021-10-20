@@ -21,9 +21,9 @@ class Taapi:
 
         return result
 
-    async def get_typprice(self, exchange: str, symbol: str, interval: str, backtrack=1):
+    async def get_typprice(self, exchange: str, symbol: str, interval: str, backtracks: int):
         
-        api_url= '{}/typprice?secret={}&exchange={}&symbol={}&interval={}&backtrack={}'.format(self.api_host, self._api_key, exchange, symbol, interval, backtrack)
+        api_url= '{}/typprice?secret={}&exchange={}&symbol={}&interval={}&backtracks={}'.format(self.api_host, self._api_key, exchange, symbol, interval, backtracks)
         # result = await requests.get(api_url).json()
         async with self.session.get(api_url) as resp:
             result = await resp.json()
