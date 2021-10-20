@@ -67,7 +67,7 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
             logger.info("[sell] -> {} % of {} will be sold".format(percentage * 100, coin))
 
         while True:
-            await asyncio.sleep(60)
+            await asyncio.sleep(15)
             current_btc_tp = await safe_execute(lambda: Taapi.get_typprice(exchange='binance', symbol='BTC/USDT', interval=interval, backtrack=1)) 
             logger.debug("[sell] typical price of last {} is {} usdt".format(interval, current_btc_tp["value"]))
             if Decimal(current_btc_tp["value"]) <= Decimal(ruled_btc_price):
@@ -81,12 +81,12 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
                     precision = int(str(Decimal(raw_precision).normalize())[::-1].find("."))
 
                     ist_qty = await safe_execute(lambda: binance.get_account_info(coin))
-                    ist_qty = Decimal(ist_qty["free"])
+                    ist_qty = Decimal(ist_qty["free"]) 
                     ist_qty = math.floor(ist_qty * 10 ** precision) / 10 ** precision if not precision == -1 else int(ist_qty)
-
+                    
                     soll_qty = Decimal(sell_asset_dict[coin]) * Decimal(percentage)
-                    sqll_qty = math.floor(soll_qty * 10 ** precision) / 10 ** precision if not precision == -1 else int(soll_qty)
-
+                    soll_qty = math.floor(soll_qty * 10 ** precision) / 10 ** precision if not precision == -1 else int(soll_qty)
+                    
                     qty = soll_qty if soll_qty <= ist_qty  else ist_qty
 
                     result = await safe_execute(lambda: binance.place_order(symbol=asset_pair, side='sell', type='MARKET', quantity=qty, test_mode=test_mode))
