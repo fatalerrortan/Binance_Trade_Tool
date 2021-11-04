@@ -46,6 +46,8 @@ async def safe_execute(func):
             break
 
 async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
+
+    return
     
     binance_coins = [ x for x in sell_asset_dict.keys()]
 
@@ -55,7 +57,7 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
         altcoins_to_sell = rule["altcoin"]
         filtered_altcoins_to_sell = {**altcoins_to_sell}
         
-        logger.info("[sell] Current Rule in USE! - when btc price is lower than {}, the followed altcoin will be sold".format(ruled_btc_price))
+        logger.info("[sell] Current Sell Rule in USE! - when btc price is lower than {}, the followed altcoin will be sold".format(ruled_btc_price))
       
         for coin, percentage in altcoins_to_sell.items():
 
@@ -69,11 +71,12 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
         while True:
             await asyncio.sleep(60)
             current_btc_tp = await safe_execute(lambda: Taapi.get_typprice(exchange='binance', symbol='BTC/USDT', interval=interval, backtracks=3)) 
-            current_btc_tp = (current_btc_tp[1]["value"] + current_btc_tp[2]["value"]) / 2
+            current_btc_tp_1_2 = (current_btc_tp[1]["value"] + current_btc_tp[2]["value"]) / 2
+            current_btc_tp_0 = current_btc_tp[0]["value"]
 
-            logger.debug("[sell] average btc typical price of last two {} is {} usdt".format(interval, current_btc_tp))
-            if Decimal(current_btc_tp) <= Decimal(ruled_btc_price):
-                logger.info("[sell] current average btc typical price {} usdt is lower than current defined btc price {} usdt. the orders below will be excuted!!!".format(current_btc_tp, ruled_btc_price))
+            logger.debug("[sell] average btc typical price of last two {} is {} usdt and average btc typical price is {} usdt".format(interval, current_btc_tp_1_2, current_btc_tp_0))
+            if Decimal(current_btc_tp_1_2) < Decimal(ruled_btc_price) and Decimal(current_btc_tp_0) < Decimal(ruled_btc_price):
+                logger.warning("[sell] current btc typical price {} usdt is lower than current defined btc price {} usdt. the orders below will be excuted!!!".format(current_btc_tp_0, ruled_btc_price))
 
                 for coin, percentage in filtered_altcoins_to_sell.items():
 
@@ -103,61 +106,112 @@ async def usdt_deposit(binance: object):
     
     while True:
             current_usdt = await safe_execute(lambda: binance.get_account_info("usdt"))    
-            # current_usdt = Decimal(current_usdt["free"])
+            current_usdt = Decimal(current_usdt["free"])
             current_usdt = 100000000
-            if current_usdt <= 10:
-                logger.info("[buy] current usdt remain is lower than 10 usdt. the buy function will not be executed until sell orders are placed.")
+            if current_usdt < 10:
+                logger.info("[buy] current usdt remain {} usdt is lower than 10 usdt. the buy function will not be executed until sell orders are placed, reloading usdt remain in 60 sec".format(current_usdt))
                 await asyncio.sleep(60)  
             else: 
-                logger.info("[buy] current usdt {} usdt. the buy function is being launching.")
+                logger.info("[buy] current usdt {} usdt. the buy function is being launching.".format(current_usdt))
                 return current_usdt
 
 async def buy(buy_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
     
     # check if buy rule of the json file is empty? if true terminate the buy coroutine
     if len(buy_rule) == 0:
-        logger.info("[buy] buy rule not found, buy function will not be executed")
+        logger.info("[buy] buy rule not found, buy function will not be executed!")
         return
     
-    previous_ruled_btc_price = None 
+    await usdt_deposit(binance)
+
+    altcoin_before = None
+    high_triggered = None
 
     for index, rule in buy_rule.items():
-        ruled_btc_price = Decimal(rule["btc"])
-        altcoins_to_buy = rule["altcoin"]
-        
-        logger.debug("[buy]!!!!!!!!!! previous ruled price is {} ".format(previous_ruled_btc_price))
 
-        # current_usdt = await usdt_deposit(binance)
-        current_usdt = 10000000
+        high, low = Decimal(rule["btc"][0]), Decimal(rule["btc"][1])
+        altcoin = rule["altcoin"]
 
-        logger.info("[buy] Current Rule in USE! - when btc price is lower than {}, the followed altcoin will be bought".format(ruled_btc_price))
+        if altcoin_before:
+
+            for coin, percentage in altcoin_before.items():
+                if coin in altcoin:
+                    altcoin[coin] = Decimal(altcoin[coin]) + Decimal(percentage)
+                else:
+                    altcoin[coin] = Decimal(percentage)     
+                    
+        logger.info("[buy] Current Buy Rule in USE! - when the high price {} usdt will be double triggered in the interval high {} ~ low {}, the following buy orders will be executed!".format(high, high, low))
       
-        for coin, percentage in altcoins_to_buy.items():
-
+        for coin, percentage in altcoin.items():
             logger.info("[buy] -> {} % of usdt will be used to buy {}".format(percentage * 100, coin))
 
         while True:
-            await asyncio.sleep(3)            
-            # current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
-            current_btc_price = 40597
+
+            await asyncio.sleep(3) 
+            current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
             logger.debug("[buy] current btc price is {} usdt".format(current_btc_price))
 
-            if previous_ruled_btc_price and current_btc_price >= previous_ruled_btc_price:
-                # buy coin at previous ruled price  it will be applied when middle rules are triggered
-                logger.info("[buy] the rule {} was triggered, the previous ruled price was triggered again, buying right now".format(index))
-                previous_ruled_btc_price = ruled_btc_price
+            if current_btc_price > high:
+                if high_triggered:
+                    # buy amount of altcoins defined in current interval
+                    altcoin_before = None
+                    break
+                else:
+                    continue
+
+            if current_btc_price <= high and current_btc_price >= low:
+                high_triggered = True
+                continue
+
+            if current_btc_price < low:
+                high_triggered = True
+                altcoin_before = altcoin
                 break
-            
-            if current_btc_price <= ruled_btc_price:
-   
-                if index == list(buy_rule)[-1]:
-                    # the last rule will bei triggered here -> buy direct
-                    logger.info("[buy] last buy rule {} was triggered, buy funtion is being terminated".format(index))
-                    return
+
+        
+
+
+
                 
-                logger.info("[buy] the rule {} was triggered, springing to the next rule and waiting for lower buy orders".format(index))
-                previous_ruled_btc_price = ruled_btc_price
-                break
+
+
+
+
+        # altcoins_to_buy = rule["altcoin"]
+        
+        # logger.debug("[buy]!!!!!!!!!! previous ruled price is {} ".format(previous_ruled_btc_price))
+
+        # # current_usdt = await usdt_deposit(binance)
+        # current_usdt = 10000000
+
+        # logger.info("[buy] Current Rule in USE! - when btc price is lower than {}, the followed altcoin will be bought".format(ruled_btc_price))
+      
+        # for coin, percentage in altcoins_to_buy.items():
+
+        #     logger.info("[buy] -> {} % of usdt will be used to buy {}".format(percentage * 100, coin))
+
+        # while True:
+        #     await asyncio.sleep(3)            
+        #     # current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
+        #     current_btc_price = 40597
+        #     logger.debug("[buy] current btc price is {} usdt".format(current_btc_price))
+
+        #     if previous_ruled_btc_price and current_btc_price >= previous_ruled_btc_price:
+        #         # buy coin at previous ruled price  it will be applied when middle rules are triggered
+        #         logger.info("[buy] the rule {} was triggered, the previous ruled price was triggered again, buying right now".format(index))
+        #         previous_ruled_btc_price = ruled_btc_price
+        #         break
+            
+        #     if current_btc_price <= ruled_btc_price:
+   
+        #         if index == list(buy_rule)[-1]:
+        #             # the last rule will bei triggered here -> buy direct
+        #             logger.info("[buy] last buy rule {} was triggered, buy funtion is being terminated".format(index))
+        #             return
+                
+        #         logger.info("[buy] the rule {} was triggered, springing to the next rule and waiting for lower buy orders".format(index))
+        #         previous_ruled_btc_price = ruled_btc_price
+        #         break
                 
                 # the first rule will be triggered here
                 # spring to the next rule 
@@ -258,6 +312,3 @@ async def trading():
 if __name__ == '__main__':
     logger.info('[app] app started!!!')
     asyncio.run(trading())
-
-
- 
