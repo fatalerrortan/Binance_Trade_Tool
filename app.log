@@ -1,0 +1,24 @@
+[2021-11-08 00:13:58,636] [INFO] [app.py] [app] app started!!!
+[2021-11-08 00:14:01,420] [INFO] [app.py] [app] the run will be in !!! TEST !!! mode executed
+[2021-11-08 00:14:01,420] [INFO] [app.py] [app] the file /Users/fatalerrortxl/Desktop/config.ini is being used as api config!!!
+[2021-11-08 00:14:01,801] [INFO] [app.py] {'asset': 'BNB', 'free': '0.00002050', 'locked': '0.00000000'}
+[2021-11-08 00:14:01,801] [INFO] [app.py] {'asset': 'USDT', 'free': '0.05323595', 'locked': '0.00000000'}
+[2021-11-08 00:14:01,801] [INFO] [app.py] {'asset': 'MANA', 'free': '605.30700000', 'locked': '0.00000000'}
+[2021-11-08 00:14:01,802] [INFO] [app.py] {'asset': 'DOGE', 'free': '41661.04420000', 'locked': '0.00000000'}
+[2021-11-08 00:14:01,802] [INFO] [app.py] {'asset': 'FIL', 'free': '44.29738000', 'locked': '0.00000000'}
+[2021-11-08 00:14:01,802] [INFO] [app.py] {'asset': 'ICP', 'free': '12.11797000', 'locked': '0.00000000'}
+[2021-11-08 00:14:02,508] [INFO] [app.py] [app] the file rules/full_test.json is being used as trade rule!!!
+[2021-11-08 00:14:05,794] [INFO] [app.py] [sell] Current Sell Rule in USE! - when btc price is lower than 61900, the followed altcoin will be sold
+[2021-11-08 00:14:05,795] [INFO] [app.py] [sell] -> 5.0 % of mana will be sold
+[2021-11-08 00:14:05,795] [INFO] [app.py] [sell] -> 5.0 % of fil will be sold
+[2021-11-08 00:14:05,795] [INFO] [app.py] [sell] -> 5.0 % of doge will be sold
+[2021-11-08 00:14:06,050] [INFO] [app.py] [buy] current usdt 100000000 usdt. the buy function is being launching.
+[2021-11-08 00:14:06,050] [INFO] [app.py] [buy] Current Buy Rule in USE! - when the high price 61900 usdt will be double triggered in the interval high 61900 ~ low 61200 usdt, the following buy orders will be executed!
+[2021-11-08 00:14:06,050] [INFO] [app.py] [buy] -> 30.0 % of usdt will be used to buy doge
+[2021-11-08 00:14:06,050] [INFO] [app.py] [buy] -> 5.0 % of usdt will be used to buy mana
+[2021-11-08 00:14:06,050] [INFO] [app.py] [buy] -> 5.0 % of usdt will be used to buy fil
+[2021-11-08 00:15:06,129] [ERROR] [app.py] Traceback (most recent call last):
+  File "/Users/fatalerrortxl/Desktop/Binance_Trade_Tool/app.py", line 37, in safe_execute
+    raise Exception(result["error"])
+Exception: 429: You have exceeded your request limit (TAAPI.IO rate-limit)!
+

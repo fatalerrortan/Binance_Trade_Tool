@@ -1,20 +1,16 @@
 from Binance import Binance
 from Taapi import Taapi
-import flask
 from App_Logging import getLogger
 import json
 from tkinter import filedialog as fd
-import time
 import configparser
 import sys
 from decimal import Decimal
 import asyncio
 import traceback
 import math
-# from typing import 
 
 logger = getLogger('app.py')
-
 
 async def cancel_current_orders(binance):
 
@@ -37,6 +33,8 @@ async def safe_execute(func):
         while True:
             try:
                 result = await func()
+                if "error" in result:
+                    raise Exception(result["error"])
             except Exception as e:
                 # logger.error(e)
                 logger.error(traceback.format_exc())
@@ -47,7 +45,9 @@ async def safe_execute(func):
 
 async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
 
-    return
+    if len(sell_rule) == 0:
+        logger.info("[sell] sell rule not found, sell function will not be executed!")
+        return
     
     binance_coins = [ x for x in sell_asset_dict.keys()]
 
@@ -111,7 +111,7 @@ async def usdt_deposit(binance: object):
     while True:
             current_usdt = await safe_execute(lambda: binance.get_account_info("usdt"))    
             current_usdt = Decimal(current_usdt["free"])
-            # current_usdt = 100000000
+            current_usdt = 100000000
             if current_usdt < 10:
                 logger.info("[buy] current usdt remain {} usdt is lower than 10 usdt. the buy function will not be executed until sell orders are placed, reloading usdt remain in 60 sec".format(current_usdt))
                 await asyncio.sleep(60)  
@@ -119,7 +119,7 @@ async def usdt_deposit(binance: object):
                 logger.info("[buy] current usdt {} usdt. the buy function is being launching.".format(current_usdt))
                 return current_usdt
 
-async def buy(buy_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
+async def buy(buy_rule, binance, Taapi, interval, test_mode):
     
     # check if buy rule of the json file is empty? if true terminate the buy coroutine
     if len(buy_rule) == 0:
@@ -144,7 +144,7 @@ async def buy(buy_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
                 else:
                     altcoin[coin] = Decimal(percentage)     
                     
-        logger.info("[buy] Current Buy Rule in USE! - when the high price {} usdt will be double triggered in the interval high {} ~ low {}, the following buy orders will be executed!".format(high, high, low))
+        logger.info("[buy] Current Buy Rule in USE! - when the high price {} usdt will be double triggered in the interval high {} ~ low {} usdt, the following buy orders will be executed!".format(high, high, low))
       
         for coin, percentage in altcoin.items():
             logger.info("[buy] -> {} % of usdt will be used to buy {}".format(percentage * 100, coin))
@@ -166,23 +166,21 @@ async def buy(buy_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
                         for coin, percentage in altcoin.items():
 
                             asset_pair = coin+"usdt"
-                            raw_precision = await safe_execute(lambda: binance.getExchangeInfo(asset_pair))
-                            raw_precision = raw_precision["symbols"][0]["filters"][2]["stepSize"]
-                            precision = int(str(Decimal(raw_precision).normalize())[::-1].find("."))
+                            ist_usdt = int(await usdt_deposit(binance))
+                            soll_usdt = int(current_usdt * Decimal(percentage)) 
 
-                            current_usdt = await usdt_deposit(binance)
-                            ist_usdt = int(current_usdt * Decimal(percentage))
-                            
-                            # ist_usdt = math.floor(soll_usdt * 10 ** precision) / 10 ** precision if not precision == -1 else int(soll_usdt)
-                            
-                            result = await safe_execute(lambda: binance.place_order(symbol=asset_pair, side='buy', type='MARKET', test_mode=test_mode, quoteOrderQty=ist_usdt))
-                            logger.warning("[buy] " + result)
-                            logger.warning("[buy] {} % {} - {} was bought!!!".format(percentage * 100 ,coin, ist_usdt))
+                            usdt = soll_usdt if soll_usdt <= ist_usdt else ist_usdt
+                                                        
+                            result = await safe_execute(lambda: binance.place_order(symbol=asset_pair, side='buy', type='MARKET', test_mode=test_mode, quoteOrderQty=usdt))
+                            logger.warning(result)
+                            logger.warning("[buy] {} % usdt - {} usdt - was used to buy {}!!!".format(percentage * 100 ,ist_usdt, coin))
 
                     altcoin_before = None
                     high_triggered = None
                     break
-                else: continue
+                else: 
+                    logger.debug("[buy] the current high {} is not triggered yet!".format(high))
+                    continue
         
             if current_btc_tp_1_2 <= high and current_btc_tp_1_2 >= low:
                 
@@ -195,16 +193,14 @@ async def buy(buy_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
                 await asyncio.sleep(60)
                 current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
                 if current_btc_price < low:
-                    logger.info("[buy] the both average btc typical price of last two {} {} usdt and current btc price {} usdt are lower than the current low {} usdt. !!!".format(interval, current_btc_tp_1_2, current_btc_price, low))
+                    logger.info("[buy] the both average btc typical price of last two {} {} usdt and current btc price {} usdt are lower than the current low {} usdt. skipping to the next interval rule!!!".format(interval, current_btc_tp_1_2, current_btc_price, low))
                     high_triggered = True
                     altcoin_before = altcoin
-                    break
-            
-    logger.warning("[buy] All preset prices have been triggered.")
+                    break             
+    
+    logger.warning("[buy] All preset prices have been triggered, the next buy round will being launched!")
 
-      
-        
-    pass
+    await buy(buy_rule, binance, Taapi, interval, test_mode)
 
 async def trading():
 
@@ -260,7 +256,7 @@ async def trading():
 
     await asyncio.gather(
                             sell(jsonObj["sell"], binance, Taapi_api, sell_asset_dict, interval, test_mode), 
-                            buy(jsonObj["buy"], binance, Taapi_api, sell_asset_dict, interval, test_mode)
+                            buy(jsonObj["buy"], binance, Taapi_api, interval, test_mode)
                         )
     
     
