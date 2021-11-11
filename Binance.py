@@ -1,7 +1,5 @@
-import requests
 import hashlib
 import hmac
-import configparser
 import time
 import aiohttp
 from typing import Union

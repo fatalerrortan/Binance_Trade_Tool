@@ -81,7 +81,7 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
                 current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
                 if current_btc_price < Decimal(ruled_btc_price):
                     
-                    logger.debug("[sell] the both average btc typical price of last two {} {} usdt and the current btc price {} usdt are lower than the currently rule {} usdt. Sell right NOW!!!".format(interval, current_btc_tp_1_2, current_btc_price, ruled_btc_price))
+                    logger.warning("[sell] the both average btc typical price of last two {} {} usdt and the current btc price {} usdt are lower than the currently rule {} usdt. Sell right NOW!!!".format(interval, current_btc_tp_1_2, current_btc_price, ruled_btc_price))
 
                     for coin, percentage in filtered_altcoins_to_sell.items():
 
@@ -102,6 +102,8 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
                         result = await safe_execute(lambda: binance.place_order(symbol=asset_pair, side='sell', type='MARKET', test_mode=test_mode, quantity=qty))
                         logger.warning(result)
                         logger.warning("[sell] {} % {} - {} was sold!!!".format(percentage * 100 ,coin, qty))
+                    # break while loop
+                    break 
                 
             
     logger.warning("[sell] All preset BTC typical prices have been triggered.")
@@ -111,9 +113,9 @@ async def usdt_deposit(binance: object):
     while True:
             current_usdt = await safe_execute(lambda: binance.get_account_info("usdt"))    
             current_usdt = Decimal(current_usdt["free"])
-            current_usdt = 100000000
+            # current_usdt = 100000000
             if current_usdt < 10:
-                logger.info("[buy] current usdt remain {} usdt is lower than 10 usdt. the buy function will not be executed until sell orders are placed, reloading usdt remain in 60 sec".format(current_usdt))
+                logger.debug("[buy] current usdt remain {} usdt is lower than 10 usdt. the buy function will not be executed until sell orders are placed, reloading usdt remain in 60 sec".format(current_usdt))
                 await asyncio.sleep(60)  
             else: 
                 logger.info("[buy] current usdt {} usdt. the buy function is being launching.".format(current_usdt))
@@ -152,15 +154,17 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
         while True:
 
             await asyncio.sleep(60)
-            current_btc_tp = await safe_execute(lambda: Taapi.get_typprice(exchange='binance', symbol='BTC/USDT', interval=interval, backtracks=3)) 
-            current_btc_tp_1_2 = (current_btc_tp[1]["value"] + current_btc_tp[2]["value"]) / 2
       
-            if current_btc_tp_1_2 > high:
+            current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
+
+            if current_btc_price > high:
 
                 if high_triggered:
-                    await asyncio.sleep(60)
-                    current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
-                    if current_btc_price > high:
+                    
+                    current_btc_tp = await safe_execute(lambda: Taapi.get_typprice(exchange='binance', symbol='BTC/USDT', interval=interval, backtracks=3)) 
+                    current_btc_tp_1_2 = Decimal((current_btc_tp[1]["value"] + current_btc_tp[2]["value"]) / 2)
+
+                    if current_btc_tp_1_2 > high:
                         logger.info("[buy] the both average btc typical price of last two {} {} usdt and current btc price {} usdt are higher than the current high {} usdt aigain! Buy right NOW!!!".format(interval, current_btc_tp_1_2, current_btc_price, high))
 
                         for coin, percentage in altcoin.items():
@@ -170,7 +174,11 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
                             soll_usdt = int(current_usdt * Decimal(percentage)) 
 
                             usdt = soll_usdt if soll_usdt <= ist_usdt else ist_usdt
-                                                        
+
+                            if usdt <= 10:
+                                logger.warning("[buy] pre defined {} % usdt - {} usdt is lower that 10 usdt, so not enough to buy {}, the order will be executed with 10 usdt!!!".format(percentage * 100 ,ist_usdt, coin))
+                                usdt = 10
+                                
                             result = await safe_execute(lambda: binance.place_order(symbol=asset_pair, side='buy', type='MARKET', test_mode=test_mode, quoteOrderQty=usdt))
                             logger.warning(result)
                             logger.warning("[buy] {} % usdt - {} usdt - was used to buy {}!!!".format(percentage * 100 ,ist_usdt, coin))
@@ -182,21 +190,18 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
                     logger.debug("[buy] the current high {} is not triggered yet!".format(high))
                     continue
         
-            if current_btc_tp_1_2 <= high and current_btc_tp_1_2 >= low:
+            if current_btc_price <= high and current_btc_price >= low:
                 
-                logger.debug("[buy] the average btc typical price of last two {} {} usdt is between the current high {} and low {}. waiting for Buy signal!".format(interval, current_btc_tp_1_2, high, low))
+                logger.debug("[buy] the current btc price {} usdt is between the current high {} and low {}. waiting for Buy signal!".format(current_btc_price, high, low))
                 high_triggered = True
                 continue
 
-            if current_btc_tp_1_2 < low:
+            if current_btc_price < low:
 
-                await asyncio.sleep(60)
-                current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
-                if current_btc_price < low:
-                    logger.info("[buy] the both average btc typical price of last two {} {} usdt and current btc price {} usdt are lower than the current low {} usdt. skipping to the next interval rule!!!".format(interval, current_btc_tp_1_2, current_btc_price, low))
-                    high_triggered = True
-                    altcoin_before = altcoin
-                    break             
+                logger.info("[buy] the current btc price {} usdt is lower than the current low {} usdt. skipping to the next interval rule!!!".format(current_btc_price, low))
+                high_triggered = True
+                altcoin_before = altcoin
+                break             
     
     logger.warning("[buy] All preset prices have been triggered, the next buy round will being launched!")
 
