@@ -9,6 +9,7 @@ from decimal import Decimal
 import asyncio
 import traceback
 import math
+import json
 
 logger = getLogger('app.py')
 
@@ -209,25 +210,51 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
 
     await buy(buy_rule, binance, Taapi, interval, test_mode)
 
-async def trading():
+async def trading(data=None):
 
-    test_mode = input("[app] would u like to start a productive RUN? input 'yes' for productive run or any else for test mode!\r\n: ")
-    if test_mode.lower() == "yes":
+    if data:
+        taapi_api_url = data["taapi_api_url"] 
+        taapi_api_key = data["taapi_api_key"]
+        binance_api_key = data["binance_api_key"]
+        binance_secret_key = data["binance_secret_key"]
+        binance_api_url = data["binance_api_url"]
+        run_mode = data["run_mode"]  # yes -> prod, no->test
+        trade_rule = json.loads(data["trade_rule"].file.read())
+        candle_interval = data["candle_interval"]
+        current_orders = data["current_orders"] # yes -> check, no->skip
+
+    if not data:
+        run_mode = input("[app] would u like to start a productive RUN? input 'yes' for productive run or any else for test mode!\r\n: ") 
+
+    if run_mode.lower() == "yes":
         test_mode = None
     else:
         test_mode = True
     
     logger.info("[app] the run will be in !!! {} !!! mode executed".format("Productive" if test_mode == None else "TEST"))
     
-    try:
-        config_file = sys.argv[1]
-    except IndexError:
-        config_file = fd.askopenfilename(title="!Please select your config file! : ) ")
-    
-    logger.info("[app] the file {} is being used as api config!!!".format(config_file))
+    if not data:
+        try:
+            config_file = sys.argv[1]
+        except IndexError:
+            config_file = fd.askopenfilename(title="!Please select your config file! : ) ")
+        
+        logger.info("[app] the file {} is being used as api config!!!".format(config_file))
 
-    config = configparser.ConfigParser()
-    config.read(config_file)
+        config = configparser.ConfigParser()
+        config.read(config_file)
+    else:
+        config = {
+            "binance":{
+                "url": binance_api_url,
+                "api_key": binance_api_key,
+                "secret_key": binance_secret_key
+            },
+            "taapi":{
+                "url": taapi_api_url,
+                "api_key": taapi_api_key,
+            }
+        }
     
     sell_asset_dict = {}
 
@@ -242,22 +269,29 @@ async def trading():
         logger.info(currency)
 
     # cancel current opende orders
-    await cancel_current_orders(binance)
+    if current_orders.lower() == "yes":
+        await cancel_current_orders(binance)
     
-    # load trade rules
-    try:
-        rule_def_file = sys.argv[2]
-    except IndexError:
-        rule_def_file = fd.askopenfilename(title="!Please select a rule definition! : ) ")
+    if not data:
+        # load trade rules
+        try:
+            rule_def_file = sys.argv[2]
+        except IndexError:
+            rule_def_file = fd.askopenfilename(title="!Please select a rule definition! : ) ")
+        
+        logger.info("[app] the file {} is being used as trade rule!!!".format(rule_def_file))
+        
+        jsonObj = None
+        with open(rule_def_file) as jsonFile:
+            jsonObj = json.load(jsonFile)
+            jsonFile.close()
+    else:
+        jsonObj = trade_rule
     
-    logger.info("[app] the file {} is being used as trade rule!!!".format(rule_def_file))
-    
-    jsonObj = None
-    with open(rule_def_file) as jsonFile:
-        jsonObj = json.load(jsonFile)
-        jsonFile.close()
-    
-    interval = input("[app] pls input candle interval to determine btc typical price: ")
+    if not data:
+        interval = input("[app] pls input candle interval to determine btc typical price: ")
+    else:
+        interval = candle_interval
 
     Taapi_api = Taapi(config)
 
@@ -265,8 +299,17 @@ async def trading():
                             sell(jsonObj["sell"], binance, Taapi_api, sell_asset_dict, interval, test_mode), 
                             buy(jsonObj["buy"], binance, Taapi_api, interval, test_mode)
                         )
-    
-    
+
+def app_close():
+    logger.info("[app] app is stopping!!!")
+    for t in asyncio.all_tasks():
+        task_name = str(t.get_coro())
+        if "buy" in task_name or "sell" in task_name:
+            try:
+                t.cancel()
+            except asyncio.CancelledError:
+                logger.info("[app] Sell and Buy functions are being cancelled now")
+
 if __name__ == '__main__':
-    logger.info('[app] app started!!!')
+    logger.info('[app] app is launching!!!')
     asyncio.run(trading())

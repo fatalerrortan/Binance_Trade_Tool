@@ -1,0 +1,18 @@
+[2021-11-22 00:45:45,954] [INFO] [server.py] [app] app is launching!!!
+[2021-11-22 00:45:45,954] [INFO] [app.py] [app] the run will be in !!! TEST !!! mode executed
+[2021-11-22 00:45:46,853] [INFO] [app.py] {'asset': 'BNB', 'free': '0.00000091', 'locked': '0.00000000'}
+[2021-11-22 00:45:46,854] [INFO] [app.py] {'asset': 'USDT', 'free': '0.28178145', 'locked': '2563.02000000'}
+[2021-11-22 00:45:46,854] [INFO] [app.py] {'asset': 'MANA', 'free': '486.27200000', 'locked': '0.00000000'}
+[2021-11-22 00:45:46,854] [INFO] [app.py] {'asset': 'DOGE', 'free': '33110.32220000', 'locked': '0.00000000'}
+[2021-11-22 00:45:46,854] [INFO] [app.py] {'asset': 'FIL', 'free': '38.01250000', 'locked': '0.00000000'}
+[2021-11-22 00:45:46,855] [INFO] [app.py] {'asset': 'ICP', 'free': '9.94712000', 'locked': '0.00000000'}
+[2021-11-22 00:45:46,855] [WARNING] [app.py] [sell] Current Sell Rule in USE! - when btc price is lower than 61900, the followed altcoin will be sold
+[2021-11-22 00:45:46,855] [WARNING] [app.py] [sell] -> 5.0 % of mana will be sold
+[2021-11-22 00:45:46,855] [WARNING] [app.py] [sell] -> 5.0 % of fil will be sold
+[2021-11-22 00:45:46,855] [WARNING] [app.py] [sell] -> 5.0 % of doge will be sold
+[2021-11-22 00:45:47,169] [INFO] [app.py] [buy] current usdt 100000000 usdt. the buy function is being launching.
+[2021-11-22 00:45:47,169] [WARNING] [app.py] [buy] Current Buy Rule in USE! - when the high price 61900 usdt will be double triggered in the interval high 61900 ~ low 61200 usdt, the following buy orders will be executed!
+[2021-11-22 00:45:47,170] [WARNING] [app.py] [buy] -> 30.0 % of usdt will be used to buy doge
+[2021-11-22 00:45:47,170] [WARNING] [app.py] [buy] -> 5.0 % of usdt will be used to buy mana
+[2021-11-22 00:45:47,170] [WARNING] [app.py] [buy] -> 5.0 % of usdt will be used to buy fil
+[2021-11-22 00:46:37,571] [INFO] [app.py] [app] app is stopping!!!
