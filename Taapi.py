@@ -1,5 +1,3 @@
-import requests
-import configparser
 import aiohttp
 
 class Taapi:
