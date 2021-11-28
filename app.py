@@ -1,3 +1,4 @@
+from tkinter.constants import NO
 from Binance import Binance
 from Taapi import Taapi
 from App_Logging import getLogger
@@ -123,7 +124,7 @@ async def usdt_deposit(binance: object, test_mode):
                 logger.info("[buy] current usdt {} usdt. the buy function is being launching.".format(current_usdt))
                 return current_usdt
 
-async def buy(buy_rule, binance, Taapi, interval, test_mode):
+async def buy_backup(buy_rule, binance, Taapi, interval, test_mode):
     
     # check if buy rule of the json file is empty? if true terminate the buy coroutine
     if len(buy_rule) == 0:
@@ -209,6 +210,68 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
     logger.warning("[buy] All preset prices have been triggered, the next buy round will being launched!")
 
     await buy(buy_rule, binance, Taapi, interval, test_mode)
+
+async def buy(buy_rule, binance, Taapi, interval, test_mode):
+    # check if buy rule of the json file is empty? if true terminate the buy coroutine
+    if len(buy_rule) == 0:
+        return logger.warning("[buy] buy rule not found, buy function will not be executed!")
+    
+    
+    last_index = None
+    bottom_index = int(len(buy_rule))
+
+    while True:
+
+        await asyncio.sleep(60)
+        current_usdt = await usdt_deposit(binance, test_mode)
+        current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
+        for index, rule in buy_rule.items():
+
+            high, low = Decimal(rule["btc"][0]), Decimal(rule["btc"][1])
+            current_index = int(index)
+
+            if low < current_btc_price < high:
+                
+                if last_index:
+                    if last_index <= current_index:
+                        
+                        logger.info(f"[buy] the current btc price {current_btc_price} is located in high {high} and low {low}, the last rule index {last_index} <= current rule index {current_index}, so waiting for buy signal!")
+                        last_index = current_index
+           
+                    elif last_index > current_index:
+                        
+                        logger.warning(f"[buy] the current btc price {current_btc_price} is located in high {high} and low {low}, the last rule index {last_index} > current rule index {current_index}, the following Buy orders will be executed!")                       
+                        percentage = Decimal(rule["percentage"])
+                        usdt_current_interval = current_usdt * percentage
+                        altcoins = rule["altcoin"]
+                        for coin, pct in altcoins:
+                            asset_pair = coin+"usdt"
+                            soll_usdt = int(usdt_current_interval * pct) 
+                            usdt = soll_usdt if soll_usdt >= 10 else None
+                            if usdt:
+                                result = await safe_execute(lambda: binance.place_order(symbol=asset_pair, side='buy', type='MARKET', test_mode=test_mode, quoteOrderQty=usdt))
+                                logger.warning(result)
+                                logger.warning(f"[buy] {pct * 100} % usdt - {usdt} usdt - was used to buy {coin}!!!")
+                            else:
+                                logger.warning(f"[buy] quoteOrderQty of {coin} order is {soll_usdt} usdt, lower than 10 usdt, skipping to the next coin!")                       
+                        last_index = current_index
+                        break
+                else:
+                    logger.info(f"[buy] the current btc price {current_btc_price} and the last index was not initilized, waiting for buy signal!")
+                    last_index = current_index
+                    break
+            
+            elif current_index == 1 and current_btc_price > high:
+
+                logger.info(f"[buy] the current btc price {current_btc_price} is !above! the all rule intervals, waiting for buy signal!!")
+                break
+
+            elif current_index == bottom_index and current_btc_price < low:
+
+                logger.info(f"[buy] the current btc price {current_btc_price} is !below! the all rule intervals, waiting for buy signal!!")
+                break
+        
+        logger.error(f"[buy] Exception Case found -> current btc price {current_btc_price}")
 
 async def trading(data=None):
 

@@ -2,7 +2,7 @@ from math import trunc
 from aiohttp import web
 import aiohttp
 import asyncio
-from aiofile import AIOFile, LineReader, async_open
+from aiofile import async_open
 from app import trading, app_close
 from App_Logging import getLogger
 
@@ -36,13 +36,11 @@ async def websocket_handler(request):
                             continue
                         await ws.send_str(line)
 
-
-
         elif msg.type == aiohttp.WSMsgType.ERROR:
-            print('ws connection closed with exception %s' %
+            logger.error('ws connection closed with exception %s' %
                   ws.exception())
 
-    print('websocket connection closed')
+    logger.warning('websocket connection closed')
 
     return ws
 
