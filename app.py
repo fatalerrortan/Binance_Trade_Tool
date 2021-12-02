@@ -103,7 +103,7 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
 
                         result = await safe_execute(lambda: binance.place_order(symbol=asset_pair, side='sell', type='MARKET', test_mode=test_mode, quantity=qty))
                         logger.warning(result)
-                        logger.warning("[sell] {} % {} - {} was sold!!!".format(percentage * 100 ,coin, qty))
+                        logger.warning("[sell] {} % {} - {} {} was sold!!!".format(percentage * 100 ,coin, qty, coin))
                     # break while loop
                     break 
                 
@@ -121,10 +121,10 @@ async def usdt_deposit(binance: object, test_mode):
                 logger.info("[buy] current usdt remain {} usdt is lower than 10 usdt. the buy function will not be executed until sell orders are placed, reloading usdt remain in 60 sec".format(current_usdt))
                 await asyncio.sleep(60)  
             else: 
-                logger.info("[buy] current usdt {} usdt. the buy function is being launching.".format(current_usdt))
+                logger.info("[buy] current usdt remain {} usdt. the buy function is working.".format(current_usdt))
                 return current_usdt
 
-async def buy_backup(buy_rule, binance, Taapi, interval, test_mode):
+# async def buy_backup(buy_rule, binance, Taapi, interval, test_mode):
     
     # check if buy rule of the json file is empty? if true terminate the buy coroutine
     if len(buy_rule) == 0:
@@ -227,7 +227,7 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
         current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
         for index, rule in buy_rule.items():
 
-            high, low = Decimal(rule["btc"][0]), Decimal(rule["btc"][1])
+            low, high = Decimal(rule["btc"][0]), Decimal(rule["btc"][1])
             current_index = int(index)
 
             if low < current_btc_price < high:
@@ -235,18 +235,19 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
                 if last_index:
                     if last_index <= current_index:
                         
-                        logger.info(f"[buy] the current btc price {current_btc_price} is located in high {high} and low {low}, the last rule index {last_index} <= current rule index {current_index}, so waiting for buy signal!")
+                        logger.info(f"[buy] the current btc price {current_btc_price} is located in low {low} and high {high}, the last rule index {last_index} <= current rule index {current_index}, so waiting for buy signal!")
                         last_index = current_index
+                        break
            
                     elif last_index > current_index:
                         
-                        logger.warning(f"[buy] the current btc price {current_btc_price} is located in high {high} and low {low}, the last rule index {last_index} > current rule index {current_index}, the following Buy orders will be executed!")                       
+                        logger.warning(f"[buy] the current btc price {current_btc_price} is located in low {low} and high {high}, the last rule index {last_index} > current rule index {current_index}, the following Buy orders will be executed!")                       
                         percentage = Decimal(rule["percentage"])
                         usdt_current_interval = current_usdt * percentage
                         altcoins = rule["altcoin"]
-                        for coin, pct in altcoins:
+                        for coin, pct in altcoins.items():
                             asset_pair = coin+"usdt"
-                            soll_usdt = int(usdt_current_interval * pct) 
+                            soll_usdt = int(usdt_current_interval * Decimal(pct)) 
                             usdt = soll_usdt if soll_usdt >= 10 else None
                             if usdt:
                                 result = await safe_execute(lambda: binance.place_order(symbol=asset_pair, side='buy', type='MARKET', test_mode=test_mode, quoteOrderQty=usdt))
@@ -271,7 +272,8 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
                 logger.info(f"[buy] the current btc price {current_btc_price} is !below! the all rule intervals, waiting for buy signal!!")
                 break
         
-        logger.error(f"[buy] Exception Case found -> current btc price {current_btc_price}")
+            # else: 
+            #     logger.error(f"[buy] Exception Case found -> current btc price {current_btc_price}")
 
 async def trading(data=None):
 
@@ -330,12 +332,10 @@ async def trading(data=None):
         
         sell_asset_dict[currency["asset"].lower()] = currency["free"]
         logger.info(currency)
-
-    # cancel current opende orders
-    if current_orders.lower() == "yes":
-        await cancel_current_orders(binance)
-    
+        
     if not data:
+        # cancel current opende orders
+        await cancel_current_orders(binance)
         # load trade rules
         try:
             rule_def_file = sys.argv[2]
@@ -375,4 +375,8 @@ def app_close():
 
 if __name__ == '__main__':
     logger.info('[app] app is launching!!!')
-    asyncio.run(trading())
+
+    try:
+        asyncio.run(trading())
+    except Exception as e:
+        logger.error(traceback.format_exc())
