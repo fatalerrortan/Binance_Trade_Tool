@@ -25,7 +25,7 @@ async def websocket_handler(request):
 
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
-            if msg.data == "close":
+            if msg.data == "detach":
                 await ws.close()
             if msg.data == "attach":               
                 async with async_open("app.log", 'r') as afp:
@@ -48,8 +48,11 @@ async def websocket_handler(request):
 async def stop(request):
     app_close()
     return web.Response(text="[app] app is stopping!!!")
-    
+
+
+
 
 app = web.Application()
 app.add_routes(routes)
-web.run_app(app)
+web.run_app(app, port = 9898)
+

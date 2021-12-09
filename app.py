@@ -11,6 +11,7 @@ import asyncio
 import traceback
 import math
 import json
+import os
 
 logger = getLogger('app.py')
 
@@ -23,10 +24,10 @@ async def cancel_current_orders(binance):
     for order in current_orders:
         orderId = order["orderId"]
         symbol = order["symbol"]
-        if_cancel = input("[app] would u like to cancel this order? \r\n {} \r\n: ".format(order))
+        if_cancel = input(f"[app] would u like to cancel this order? \r\n {order} \r\n: ")
         if if_cancel.lower() == "yes":
             result = await safe_execute(lambda: binance.cancel_order(symbol, orderId))
-            logger.info("[app] the current opened order {} - {} was canceled successfuly".format(orderId, symbol))
+            logger.info(f"[app] the current opened order {orderId} - {symbol} was canceled successfuly")
         else: continue 
 
 async def safe_execute(func):
@@ -58,17 +59,22 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
         ruled_btc_price = rule["btc"]
         altcoins_to_sell = rule["altcoin"]
         filtered_altcoins_to_sell = {**altcoins_to_sell}
+        is_active = bool(rule["active"])
         
-        logger.warning("[sell] Current Sell Rule in USE! - when btc price is lower than {}, the followed altcoin will be sold".format(ruled_btc_price))
+        if not is_active:
+            logger.warning(f"[sell] the current sell rule {ruled_btc_price} is inactive, skipping to the next sell rule!")
+            continue
+        
+        logger.warning(f"[sell] Current Sell Rule in USE! - when btc price is lower than {ruled_btc_price}, the followed altcoin will be sold")
       
         for coin, percentage in altcoins_to_sell.items():
 
             if coin not in binance_coins:
-                logger.warning("[sell] the in rule defined {} is not listed in the binance asset. the sell plan of this coin will be canceled".format(coin))
+                logger.warning(f"[sell] the in rule defined {coin} is not listed in the binance asset. the sell plan of this coin will be canceled")
                 del filtered_altcoins_to_sell[coin]
                 continue
 
-            logger.warning("[sell] -> {} % of {} will be sold".format(percentage * 100, coin))
+            logger.warning(f"[sell] -> {percentage * 100} % of {coin} will be sold")
 
         while True:
             await asyncio.sleep(60)
@@ -76,14 +82,14 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
             current_btc_tp_1_2 = (current_btc_tp[1]["value"] + current_btc_tp[2]["value"]) / 2
             current_btc_tp_0 = current_btc_tp[0]["value"]
 
-            logger.info("[sell] average btc typical price of last two {} is {} usdt.".format(interval, current_btc_tp_1_2))
+            logger.info(f"[sell] average btc typical price of last two {interval} is {current_btc_tp_1_2} usdt.")
             
             if Decimal(current_btc_tp_1_2) < Decimal(ruled_btc_price):
                 await asyncio.sleep(60)
                 current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
                 if current_btc_price < Decimal(ruled_btc_price):
                     
-                    logger.warning("[sell] the both average btc typical price of last two {} {} usdt and the current btc price {} usdt are lower than the currently rule {} usdt. Sell right NOW!!!".format(interval, current_btc_tp_1_2, current_btc_price, ruled_btc_price))
+                    logger.warning(f"[sell] the both average btc typical price of last two {interval} {current_btc_tp_1_2} usdt and the current btc price {current_btc_price} usdt are lower than the currently rule {ruled_btc_price} usdt. Sell right NOW!!!")
 
                     for coin, percentage in filtered_altcoins_to_sell.items():
 
@@ -103,7 +109,7 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
 
                         result = await safe_execute(lambda: binance.place_order(symbol=asset_pair, side='sell', type='MARKET', test_mode=test_mode, quantity=qty))
                         logger.warning(result)
-                        logger.warning("[sell] {} % {} - {} {} was sold!!!".format(percentage * 100 ,coin, qty, coin))
+                        logger.warning(f"[sell] {percentage * 100} % {coin} - {qty} {coin} was sold!!!")
                     # break while loop
                     break 
                 
@@ -118,10 +124,10 @@ async def usdt_deposit(binance: object, test_mode):
             if test_mode:
                 current_usdt = 100000000
             if current_usdt < 10:
-                logger.info("[buy] current usdt remain {} usdt is lower than 10 usdt. the buy function will not be executed until sell orders are placed, reloading usdt remain in 60 sec".format(current_usdt))
+                logger.info(f"[buy] current usdt remain {current_usdt} usdt is lower than 10 usdt. the buy function will not be executed until sell orders are placed, reloading usdt remain in 60 sec")
                 await asyncio.sleep(60)  
             else: 
-                logger.info("[buy] current usdt remain {} usdt. the buy function is working.".format(current_usdt))
+                logger.info(f"[buy] current usdt remain {current_usdt} usdt. the buy function is working.")
                 return current_usdt
 
 # async def buy_backup(buy_rule, binance, Taapi, interval, test_mode):
@@ -228,8 +234,14 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
         for index, rule in buy_rule.items():
 
             low, high = Decimal(rule["btc"][0]), Decimal(rule["btc"][1])
-            current_index = int(index)
+            is_active = bool(rule["active"])
+            
+            if not is_active:
+                logger.warning(f"[buy] the current buy rule with low {low} and high {high} is inactive, skipping to the next buy rule!")
+                continue
 
+            current_index = int(index)
+            
             if low < current_btc_price < high:
                 
                 if last_index:
@@ -241,7 +253,17 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
            
                     elif last_index > current_index:
                         
-                        logger.warning(f"[buy] the current btc price {current_btc_price} is located in low {low} and high {high}, the last rule index {last_index} > current rule index {current_index}, the following Buy orders will be executed!")                       
+                        logger.warning(f"[buy] the current btc price {current_btc_price} is located in low {low} and high {high}, the last rule index {last_index} > current rule index {current_index}, continue to compare current btc typical price!")                       
+
+                        current_btc_tp = await safe_execute(lambda: Taapi.get_typprice(exchange='binance', symbol='BTC/USDT', interval=interval, backtracks=1)) 
+                        current_btc_tp = Decimal(current_btc_tp[0]["value"])
+                        
+                        if not current_btc_tp > low:
+                            logger.warning(f"[buy] the current btc typical price {current_btc_tp} < current low {low}, it wasn't a real bull break. continue...")
+                            break                        
+                        
+                        logger.warning(f"[buy] the current btc typical price {current_btc_tp} > current low {low}, the following buy will be executed immediately!!!")                       
+
                         percentage = Decimal(rule["percentage"])
                         usdt_current_interval = current_usdt * percentage
                         altcoins = rule["altcoin"]
@@ -304,7 +326,7 @@ async def trading(data=None):
         except IndexError:
             config_file = fd.askopenfilename(title="!Please select your config file! : ) ")
         
-        logger.info("[app] the file {} is being used as api config!!!".format(config_file))
+        logger.info(f"[app] the file {config_file} is being used as api config!!!")
 
         config = configparser.ConfigParser()
         config.read(config_file)
@@ -342,7 +364,7 @@ async def trading(data=None):
         except IndexError:
             rule_def_file = fd.askopenfilename(title="!Please select a rule definition! : ) ")
         
-        logger.info("[app] the file {} is being used as trade rule!!!".format(rule_def_file))
+        logger.info(f"[app] the file {rule_def_file} is being used as trade rule!!!")
         
         jsonObj = None
         with open(rule_def_file) as jsonFile:
@@ -375,8 +397,9 @@ def app_close():
 
 if __name__ == '__main__':
     logger.info('[app] app is launching!!!')
-
+    logger.info('[app] server is launching!!!')
     try:
+        # os.system('python server.py')
         asyncio.run(trading())
     except Exception as e:
         logger.error(traceback.format_exc())
