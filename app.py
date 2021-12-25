@@ -1,4 +1,3 @@
-from tkinter.constants import NO
 from Binance import Binance
 from Taapi import Taapi
 from App_Logging import getLogger
@@ -11,7 +10,6 @@ import asyncio
 import traceback
 import math
 import json
-import os
 
 logger = getLogger('app.py')
 
@@ -130,115 +128,30 @@ async def usdt_deposit(binance: object, test_mode):
                 logger.info(f"[buy] current usdt remain {current_usdt} usdt. the buy function is working.")
                 return current_usdt
 
-# async def buy_backup(buy_rule, binance, Taapi, interval, test_mode):
-    
-    # check if buy rule of the json file is empty? if true terminate the buy coroutine
-    if len(buy_rule) == 0:
-        logger.warning("[buy] buy rule not found, buy function will not be executed!")
-        return
-    
-    current_usdt = await usdt_deposit(binance, test_mode)
-
-    altcoin_before = None
-    high_triggered = None
-
-    for index, rule in buy_rule.items():
-
-        high, low = Decimal(rule["btc"][0]), Decimal(rule["btc"][1])
-        altcoin = rule["altcoin"]
-
-        if altcoin_before:
-
-            for coin, percentage in altcoin_before.items():
-                if coin in altcoin:
-                    altcoin[coin] = Decimal(altcoin[coin]) + Decimal(percentage)
-                else:
-                    altcoin[coin] = Decimal(percentage)     
-                    
-        logger.warning("[buy] Current Buy Rule in USE! - when the high price {} usdt will be double triggered in the interval high {} ~ low {} usdt, the following buy orders will be executed!".format(high, high, low))
-      
-        for coin, percentage in altcoin.items():
-            logger.warning("[buy] -> {} % of usdt will be used to buy {}".format(percentage * 100, coin))
-
-        while True:
-
-            await asyncio.sleep(60)
-      
-            current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
-
-            if current_btc_price > high:
-
-                if high_triggered:
-                    
-                    current_btc_tp = await safe_execute(lambda: Taapi.get_typprice(exchange='binance', symbol='BTC/USDT', interval=interval, backtracks=3)) 
-                    current_btc_tp_1_2 = Decimal((current_btc_tp[1]["value"] + current_btc_tp[2]["value"]) / 2)
-
-                    if current_btc_tp_1_2 > high:
-                        logger.warning("[buy] the both average btc typical price of last two {} {} usdt and current btc price {} usdt are higher than the current high {} usdt aigain! Buy right NOW!!!".format(interval, current_btc_tp_1_2, current_btc_price, high))
-
-                        for coin, percentage in altcoin.items():
-
-                            asset_pair = coin+"usdt"
-                            ist_usdt = int(await usdt_deposit(binance, test_mode))
-                            soll_usdt = int(current_usdt * Decimal(percentage)) 
-
-                            usdt = soll_usdt if soll_usdt <= ist_usdt else ist_usdt
-
-                            if usdt <= 10:
-                                logger.warning("[buy] pre defined {} % usdt - {} usdt is lower that 10 usdt, so not enough to buy {}, the order will be executed with 10 usdt!!!".format(percentage * 100 ,ist_usdt, coin))
-                                usdt = 10
-                                
-                            result = await safe_execute(lambda: binance.place_order(symbol=asset_pair, side='buy', type='MARKET', test_mode=test_mode, quoteOrderQty=usdt))
-                            logger.warning(result)
-                            logger.warning("[buy] {} % usdt - {} usdt - was used to buy {}!!!".format(percentage * 100 ,ist_usdt, coin))
-
-                        altcoin_before = None
-                        high_triggered = None
-                        break
-                    else: continue
-                else: 
-                    logger.info("[buy] the current high {} is not triggered yet!".format(high))
-                    continue
-        
-            if current_btc_price <= high and current_btc_price >= low:
-                
-                logger.info("[buy] the current btc price {} usdt is between the current high {} and low {}. waiting for Buy signal!".format(current_btc_price, high, low))
-                high_triggered = True
-                continue
-
-            if current_btc_price < low:
-
-                logger.warning("[buy] the current btc price {} usdt is lower than the current low {} usdt. skipping to the next interval rule!!!".format(current_btc_price, low))
-                high_triggered = True
-                altcoin_before = altcoin
-                break             
-    
-    logger.warning("[buy] All preset prices have been triggered, the next buy round will being launched!")
-
-    await buy(buy_rule, binance, Taapi, interval, test_mode)
-
 async def buy(buy_rule, binance, Taapi, interval, test_mode):
-    # check if buy rule of the json file is empty? if true terminate the buy coroutine
-    if len(buy_rule) == 0:
-        return logger.warning("[buy] buy rule not found, buy function will not be executed!")
-    
     
     last_index = None
-    bottom_index = int(len(buy_rule))
+
+    buy_rule_filtered = {}
+    for index, rule in buy_rule.items():
+        is_active = bool(rule["active"])
+        if is_active:
+            buy_rule_filtered[index] = rule
+    
+    # check if buy rule of the json file is empty? if true terminate the buy coroutine
+    if len(buy_rule_filtered) == 0:
+        return logger.warning("[buy] buy rule not found, buy function will not be executed!")
+
+    bottom_index = int(len(buy_rule_filtered))
 
     while True:
 
         await asyncio.sleep(60)
         current_usdt = await usdt_deposit(binance, test_mode)
         current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
-        for index, rule in buy_rule.items():
+        for index, rule in buy_rule_filtered.items():
 
             low, high = Decimal(rule["btc"][0]), Decimal(rule["btc"][1])
-            is_active = bool(rule["active"])
-            
-            if not is_active:
-                logger.warning(f"[buy] the current buy rule with low {low} and high {high} is inactive, skipping to the next buy rule!")
-                continue
 
             current_index = int(index)
             
@@ -302,10 +215,12 @@ async def trading(data=None):
     if data:
         taapi_api_url = data["taapi_api_url"] 
         taapi_api_key = data["taapi_api_key"]
+
         binance_api_key = data["binance_api_key"]
         binance_secret_key = data["binance_secret_key"]
         binance_api_url = data["binance_api_url"]
-        run_mode = data["run_mode"]  # yes -> prod, no->test
+
+        run_mode = "yes" if data["exe_mode"] == "productive" else "no"  # yes -> prod, no->test
         trade_rule = json.loads(data["trade_rule"].file.read())
         candle_interval = data["candle_interval"]
         current_orders = data["current_orders"] # yes -> check, no->skip
@@ -397,7 +312,6 @@ def app_close():
 
 if __name__ == '__main__':
     logger.info('[app] app is launching!!!')
-    logger.info('[app] server is launching!!!')
     try:
         # os.system('python server.py')
         asyncio.run(trading())
