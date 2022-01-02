@@ -1,13 +1,17 @@
-FROM python:latest
+FROM ubuntu:latest
 
-COPY entrypoint.sh /opt/entrypoint.sh
-COPY dist/server /opt/server
+LABEL app="btt"
 
-WORKDIR /opt
+# RUN mkdir /app
+
+COPY entrypoint.sh /app/entrypoint.sh
+COPY dist/server /app/server
+
+WORKDIR /app
 
 ENV LANG=C.UTF-8 \ 
     LC_ALL=C.UTF-8
 
-RUN chmod 744 /opt/entrypoint.sh
+RUN chmod 555 /app/entrypoint.sh
 
-ENTRYPOINT  ["/opt/entrypoint.sh"]
+ENTRYPOINT  ["/app/entrypoint.sh"]
