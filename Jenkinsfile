@@ -71,7 +71,7 @@ pipeline{
         stage("stop and remove previous container"){
             steps{
                 script{
-                    sshCommand remote: remote, command: "docker rm $(docker ps -f 'label=app=btt')"
+                    sshCommand remote: remote, command: "[ -z $(docker ps -a -q -f 'label=app=abtt') ] && echo 'no running abtt containers exists' || docker rm -f $(docker ps -a -q -f 'label=app=abtt')"
                 }
             }
         }

@@ -1,6 +1,6 @@
 FROM ubuntu:latest
 
-LABEL app="btt"
+LABEL app="abtt"
 
 # RUN mkdir /app
 
