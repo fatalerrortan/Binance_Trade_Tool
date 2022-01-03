@@ -71,7 +71,7 @@ pipeline{
         stage("stop and remove previous container"){
             steps{
                 script{
-                    sshCommand remote: remote, command: "[ -z $(docker ps -a -q -f 'label=app=abtt') ] && echo 'no running abtt containers exists' || docker rm -f $(docker ps -a -q -f 'label=app=abtt')"
+                    sshCommand remote: remote, command: "[ -z \$(docker ps -a -q -f 'label=app=abtt') ] && echo 'no running abtt containers exists' || docker rm -f \$(docker ps -a -q -f 'label=app=abtt')"
                 }
             }
         }
@@ -79,7 +79,7 @@ pipeline{
         stage("run container via docker compose"){
             steps{
                 script{
-                    sshCommand remote: remote, command: "docker run -dit --name btt --network host ${image_name}:${image_tag}"
+                    sshCommand remote: remote, command: "docker run -dit --name abtt --privileged --network host ${image_name}:${image_tag}"
                     sshCommand remote: remote, command: "docker container ls -a"
                 }
             }

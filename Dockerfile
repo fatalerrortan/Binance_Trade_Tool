@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM python:slim
 
 LABEL app="abtt"
 
