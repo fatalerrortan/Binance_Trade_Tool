@@ -1,0 +1,32 @@
+[2021-12-25 00:53:01,974] [INFO] [server.py] [app] app is launching!!!
+[2021-12-25 00:53:01,975] [INFO] [app.py] [app] the run will be in !!! TEST !!! mode executed
+[2021-12-25 00:53:02,350] [INFO] [app.py] {'asset': 'BNB', 'free': '0.00000091', 'locked': '0.00000000'}
+[2021-12-25 00:53:02,351] [INFO] [app.py] {'asset': 'USDT', 'free': '0.24902145', 'locked': '0.00000000'}
+[2021-12-25 00:53:02,352] [INFO] [app.py] {'asset': 'MANA', 'free': '0.27200000', 'locked': '0.00000000'}
+[2021-12-25 00:53:02,353] [INFO] [app.py] {'asset': 'THETA', 'free': '59.54040000', 'locked': '0.00000000'}
+[2021-12-25 00:53:02,354] [INFO] [app.py] {'asset': 'DOGE', 'free': '40003.42220000', 'locked': '0.00000000'}
+[2021-12-25 00:53:02,355] [INFO] [app.py] {'asset': 'FIL', 'free': '96.77368000', 'locked': '0.00000000'}
+[2021-12-25 00:53:02,356] [INFO] [app.py] {'asset': 'ICP', 'free': '9.94712000', 'locked': '0.00000000'}
+[2021-12-25 00:53:02,358] [WARNING] [app.py] [sell] sell rule not found, sell function will not be executed!
+[2021-12-25 00:54:02,783] [INFO] [app.py] [buy] current usdt remain 100000000 usdt. the buy function is working.
+[2021-12-25 00:54:03,039] [INFO] [app.py] [buy] the current btc price 50777.31000000 and the last index was not initilized, waiting for buy signal!
+[2021-12-25 00:55:03,506] [INFO] [app.py] [buy] current usdt remain 100000000 usdt. the buy function is working.
+[2021-12-25 00:55:03,759] [INFO] [app.py] [buy] the current btc price 50753.44000000 is located in low 48300 and high 52480, the last rule index 1 <= current rule index 1, so waiting for buy signal!
+[2021-12-25 00:56:04,195] [INFO] [app.py] [buy] current usdt remain 100000000 usdt. the buy function is working.
+[2021-12-25 00:56:04,448] [INFO] [app.py] [buy] the current btc price 50738.00000000 is located in low 48300 and high 52480, the last rule index 1 <= current rule index 1, so waiting for buy signal!
+[2021-12-25 00:57:04,846] [INFO] [app.py] [buy] current usdt remain 100000000 usdt. the buy function is working.
+[2021-12-25 00:57:05,107] [INFO] [app.py] [buy] the current btc price 50759.94000000 is located in low 48300 and high 52480, the last rule index 1 <= current rule index 1, so waiting for buy signal!
+[2021-12-25 00:58:05,569] [INFO] [app.py] [buy] current usdt remain 100000000 usdt. the buy function is working.
+[2021-12-25 00:58:06,280] [INFO] [app.py] [buy] the current btc price 50796.46000000 is located in low 48300 and high 52480, the last rule index 1 <= current rule index 1, so waiting for buy signal!
+[2021-12-25 00:59:06,749] [INFO] [app.py] [buy] current usdt remain 100000000 usdt. the buy function is working.
+[2021-12-25 00:59:07,464] [INFO] [app.py] [buy] the current btc price 50769.46000000 is located in low 48300 and high 52480, the last rule index 1 <= current rule index 1, so waiting for buy signal!
+[2021-12-25 01:00:08,555] [INFO] [app.py] [buy] current usdt remain 100000000 usdt. the buy function is working.
+[2021-12-25 01:00:09,267] [INFO] [app.py] [buy] the current btc price 50824.72000000 is located in low 48300 and high 52480, the last rule index 1 <= current rule index 1, so waiting for buy signal!
+[2021-12-25 01:01:09,741] [INFO] [app.py] [buy] current usdt remain 100000000 usdt. the buy function is working.
+[2021-12-25 01:01:09,996] [INFO] [app.py] [buy] the current btc price 50781.12000000 is located in low 48300 and high 52480, the last rule index 1 <= current rule index 1, so waiting for buy signal!
+[2021-12-25 01:02:10,376] [INFO] [app.py] [buy] current usdt remain 100000000 usdt. the buy function is working.
+[2021-12-25 01:02:10,629] [INFO] [app.py] [buy] the current btc price 50786.32000000 is located in low 48300 and high 52480, the last rule index 1 <= current rule index 1, so waiting for buy signal!
+[2021-12-25 01:03:11,085] [INFO] [app.py] [buy] current usdt remain 100000000 usdt. the buy function is working.
+[2021-12-25 01:03:11,340] [INFO] [app.py] [buy] the current btc price 50616.48000000 is located in low 48300 and high 52480, the last rule index 1 <= current rule index 1, so waiting for buy signal!
+[2021-12-25 01:04:11,778] [INFO] [app.py] [buy] current usdt remain 100000000 usdt. the buy function is working.
+[2021-12-25 01:04:12,034] [INFO] [app.py] [buy] the current btc price 50722.25000000 is located in low 48300 and high 52480, the last rule index 1 <= current rule index 1, so waiting for buy signal!
