@@ -1,4 +1,4 @@
-FROM python:slim
+FROM alpine:latest
 
 LABEL app="abtt"
 
