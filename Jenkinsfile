@@ -80,8 +80,9 @@ pipeline{
             steps{
                 script{
 
-                    def docker_compose_yml = readFile "${env.WORKSPACE}/docker-compose.yml"
+                    def docker_compose_yml = readFile(file: "docker-compose.yml")
                     // sshCommand remote: remote, command: "docker run -dit --name abtt --privileged --network host ${image_name}:${image_tag}"
+                    println(docker_compose_yml)
                     
                     sshCommand remote: remote, command: "echo ${docker_compose_yml} > docker-compose.yml"
                     
