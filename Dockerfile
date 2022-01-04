@@ -1,13 +1,11 @@
-FROM alpine:latest
+FROM fatalerrortxl/modi_ubuntu:abbt
 
 LABEL app="abtt"
 
-# RUN mkdir /app
+WORKDIR /app
 
 COPY entrypoint.sh /app/entrypoint.sh
 COPY dist/server /app/server
-
-WORKDIR /app
 
 ENV LANG=C.UTF-8 \ 
     LC_ALL=C.UTF-8
