@@ -3,6 +3,8 @@ services:
     image: ${IMAGE}
     ports:
       - "9898:9898"
+    # implies -it for interaction
+    stdin_open: true
     privileged: true
   # web:
   # # resue service config in another docker compose file
