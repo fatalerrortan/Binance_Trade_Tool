@@ -82,9 +82,10 @@ pipeline{
 
                     def docker_compose_yml = readFile(file: "docker-compose.yml")
                     // sshCommand remote: remote, command: "docker run -dit --name abtt --privileged --network host ${image_name}:${image_tag}"
-                    println(docker_compose_yml)
-                    
+
                     sshCommand remote: remote, command: "echo ${docker_compose_yml} > docker-compose.yml"
+
+                    sshCommand remote: remote, command: "cat docker-compose.yml"
                     
                     sshCommand remote: remote, command: "export IMAGE=${image_name}:${image_tag} && docker-compose config && docker-compose up -d"
 
