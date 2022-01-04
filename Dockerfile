@@ -1,13 +1,15 @@
-FROM python:latest
+FROM fatalerrortxl/modi_ubuntu:abbt
 
-COPY entrypoint.sh /opt/entrypoint.sh
-COPY dist/server /opt/server
+LABEL app="abtt"
 
-WORKDIR /opt/btt
+WORKDIR /app
+
+COPY entrypoint.sh /app/entrypoint.sh
+COPY dist/server /app/server
 
 ENV LANG=C.UTF-8 \ 
     LC_ALL=C.UTF-8
 
-RUN chmod 444 /opt/entrypoint.sh
+RUN chmod 555 /app/entrypoint.sh
 
-ENTRYPOINT  ["/opt/entrypoint.sh"]
+ENTRYPOINT  ["/app/entrypoint.sh"]

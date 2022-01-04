@@ -216,10 +216,12 @@ async def trading(data=None):
     if data:
         taapi_api_url = data["taapi_api_url"] 
         taapi_api_key = data["taapi_api_key"]
+
         binance_api_key = data["binance_api_key"]
         binance_secret_key = data["binance_secret_key"]
         binance_api_url = data["binance_api_url"]
-        run_mode = data["run_mode"]  # yes -> prod, no->test
+
+        run_mode = "yes" if data["exe_mode"] == "productive" else "no"  # yes -> prod, no->test
         trade_rule = json.loads(data["trade_rule"].file.read())
         candle_interval = data["candle_interval"]
         current_orders = data["current_orders"] # yes -> check, no->skip
@@ -311,7 +313,6 @@ def app_close():
 
 if __name__ == '__main__':
     logger.info('[app] app is launching!!!')
-    logger.info('[app] server is launching!!!')
     try:
         # os.system('python server.py')
         asyncio.run(trading())
