@@ -1,0 +1,36 @@
+{   
+    "sell": {        
+        
+    },
+    "buy": {
+        "1": {
+            "active": 1,
+            "btc": [48300, 52480],
+            "percentage": 0.1,
+            "altcoin": {
+                "doge": 0.7,
+                "fil": 0.1,
+                "mana": 0.2
+            }
+        },    
+        "2": {
+            "active": 1,
+            "btc": [42000, 48300],
+            "percentage": 0.2,
+            "altcoin": {
+                "doge": 0.7,
+                "mana": 0.2
+            }
+        },
+        "3": {
+            "active": 0,
+            "btc": [54263, 54867],
+            "percentage": 0.3,
+            "altcoin": {
+                "doge": 0.7,
+                "fil": 0.1,
+                "mana": 0.2
+            }
+        }
+    }
+}
