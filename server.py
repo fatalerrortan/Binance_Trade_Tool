@@ -63,9 +63,10 @@ async def websocket_handler(request):
 @routes.get('/stop')
 async def stop(request):  
     os.environ["__exit__"] = "yes"
+    logger.warning('[app] the exit flag was set, the app will be closed in 1 min !!!')
     # app_close()
     
-    return web.Response(text="[app] app is stopping!!!")
+    return web.Response(text="app] the exit flag was set, the app will be closed in 1 min !!!")
      
 app = web.Application()
 app.add_routes(routes)
