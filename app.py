@@ -54,7 +54,8 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
     binance_coins = [ x for x in sell_asset_dict.keys()]
 
     for index, rule in sell_rule.items():
-
+        if os.environ["__exit__"] == "yes":
+            exit(logger.warning('[app] app is stopping!!!'))
         ruled_btc_price = rule["btc"]
         altcoins_to_sell = rule["altcoin"]
         filtered_altcoins_to_sell = {**altcoins_to_sell}
@@ -146,7 +147,8 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
     bottom_index = int(len(buy_rule_filtered))
 
     while True:
-
+        if os.environ["__exit__"] == "yes":
+            exit(logger.warning('[app] app is stopping!!!'))
         await asyncio.sleep(60)
         current_usdt = await usdt_deposit(binance, test_mode)
         current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
@@ -221,7 +223,7 @@ async def trading(data=None):
         binance_secret_key = data["binance_secret_key"]
         binance_api_url = data["binance_api_url"]
 
-        run_mode = "yes" if data["exe_mode"] == "productive" else "no"  # yes -> prod, no->test
+        run_mode = "yes" if data["run_mode"] == "productive" else "no"  # yes -> prod, no->test
         trade_rule = json.loads(data["trade_rule"].file.read())
         candle_interval = data["candle_interval"]
         current_orders = data["current_orders"] # yes -> check, no->skip
@@ -301,7 +303,7 @@ async def trading(data=None):
                             buy(jsonObj["buy"], binance, Taapi_api, interval, test_mode)
                         )
 
-def app_close():
+async def app_close():
     logger.info("[app] app is stopping!!!")
     for t in asyncio.all_tasks():
         task_name = str(t.get_coro())

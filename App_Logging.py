@@ -1,5 +1,7 @@
-import logging
 import os.path
+import queue
+import logging
+from logging.handlers import QueueHandler, QueueListener
         
 def logging_file():
     
@@ -33,4 +35,28 @@ def getLogger(fname:str):
 
     return logger
 
+def async_getLogger(fname:str):
+    
+    log_queue = queue.Queue(-1)
+    queue_handler = QueueHandler(log_queue)
 
+    logging.basicConfig(level=logging.NOTSET)
+    
+    logger = logging.getLogger(fname)
+    logger.propagate = False
+    logger.addHandler(queue_handler)
+
+    console_handler = logging.StreamHandler()
+    formatter = '[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s'
+    console_handler.setFormatter(formatter)
+    console_handler.setLevel(logging.DEBUG)
+
+    file_handler = logging.FileHandler("app.log")
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.INFO)
+
+    listener = QueueListener(log_queue, console_handler, file_handler)
+    listener.start()
+    # listener.stop()
+
+    return logger

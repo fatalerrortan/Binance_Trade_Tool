@@ -5,16 +5,33 @@ import asyncio
 from aiofile import async_open
 from app import trading, app_close
 from App_Logging import getLogger
+import threading
+import os
+# from multiprocessing import Process
 
 logger = getLogger('server.py')
+x = None
+exit_event = threading.Event()
+th_id = None
+
 routes = web.RouteTableDef()
 
 @routes.post('/app')
 async def run(request):
+
+    global x
+    os.environ["__exit__"] = "no"
+
     data = await request.post()
     logger.info("[app] app is launching!!!") 
-    await trading(data)
+    x = threading.Thread(target=thread, args=(data,))
+    # x = Process(target=thread, args=(data,))
+    x.start()    
+    # await trading(data)
     return web.Response(text="[app] app is launching!!!")
+
+def thread(data):
+    asyncio.run(trading(data))
 
 @routes.get('/ws')
 async def websocket_handler(request):
@@ -44,13 +61,12 @@ async def websocket_handler(request):
     return ws
 
 @routes.get('/stop')
-async def stop(request):
-    logger.warning('[app] app is stopping!!!')
-    app_close()
+async def stop(request):  
+    os.environ["__exit__"] = "yes"
+    # app_close()
+    
     return web.Response(text="[app] app is stopping!!!")
      
-
 app = web.Application()
 app.add_routes(routes)
 web.run_app(app, port = 9898)
-
