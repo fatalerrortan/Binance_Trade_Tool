@@ -1,4 +1,6 @@
-from math import trunc
+import os
+import random
+# from math import trunc
 from aiohttp import web
 import aiohttp
 import asyncio
@@ -6,29 +8,41 @@ from aiofile import async_open
 from app import trading, app_close
 from App_Logging import getLogger
 import threading
-import os
+
+
 # from multiprocessing import Process
 
-logger = getLogger('server.py')
+logger = None
 x = None
-exit_event = threading.Event()
-th_id = None
-
 routes = web.RouteTableDef()
+        
 
 @routes.post('/app')
 async def run(request):
 
-    global x
-    os.environ["__exit__"] = "no"
+    global x, logger
 
+    if os.getenv("run_id"):
+        return web.Response(text='{"status": "error", "body": "[app] the Run with ID: %s is already running now!!!"}' % (os.getenv("run_id")))
+
+    run_id = str(random.randint(1000, 9999))
+    os.environ["run_id"] = run_id
+    logger = getLogger('server.py', run_id)
+    
+    
     data = await request.post()
     logger.info("[app] app is launching!!!") 
-    x = threading.Thread(target=thread, args=(data,))
-    # x = Process(target=thread, args=(data,))
-    x.start()    
+    logger.info(f"[app] --- run id ---: {run_id}") 
+    
+    try:
+        # data["client_id"] = client_id
+        x = threading.Thread(target=thread, args=(data,))
+        x.start()
+    except Exception:
+        return web.Response(text='{"status": "error", "body": "[app] launching error!!!"}')
+  
     # await trading(data)
-    return web.Response(text="[app] app is launching!!!")
+    return web.Response(text='{"status": "ok", "body": "[app] app is launching!!!", "run_id": "%s"}' % (run_id))
 
 def thread(data):
     asyncio.run(trading(data))
@@ -62,12 +76,11 @@ async def websocket_handler(request):
 
 @routes.get('/stop')
 async def stop(request):  
-    os.environ["__exit__"] = "yes"
+    del os.environ["run_id"]
     logger.warning('[app] the exit flag was set, the app will be closed in 1 min !!!')
     # app_close()
+    return web.Response(text='{"status": "ok", "body": "[app] the exit flag was set, the app will be closed in 1 min !!!"}')
     
-    return web.Response(text="app] the exit flag was set, the app will be closed in 1 min !!!")
-     
 app = web.Application()
 app.add_routes(routes)
 web.run_app(app, port = 9898)

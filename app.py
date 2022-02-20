@@ -12,7 +12,7 @@ import math
 import json
 import os
 
-logger = getLogger('app.py')
+logger = None
 
 async def cancel_current_orders(binance):
 
@@ -54,7 +54,7 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
     binance_coins = [ x for x in sell_asset_dict.keys()]
 
     for index, rule in sell_rule.items():
-        if os.environ["__exit__"] == "yes":
+        if os.getenv("run_id") == None:
             exit(logger.warning('[app] app is stopping!!!'))
         ruled_btc_price = rule["btc"]
         altcoins_to_sell = rule["altcoin"]
@@ -147,7 +147,7 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
     bottom_index = int(len(buy_rule_filtered))
 
     while True:
-        if os.environ["__exit__"] == "yes":
+        if os.getenv("run_id") == None:
             exit(logger.warning('[app] app is stopping!!!'))
         await asyncio.sleep(60)
         current_usdt = await usdt_deposit(binance, test_mode)
@@ -215,29 +215,30 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
 
 async def trading(data=None):
 
-    if data:
-        taapi_api_url = data["taapi_api_url"] 
-        taapi_api_key = data["taapi_api_key"]
+    global logger
+    logger = getLogger('app.py', os.environ["run_id"])
 
+    if data:
+        taapi_api_key = data["taapi_api_key"]
         binance_api_key = data["binance_api_key"]
         binance_secret_key = data["binance_secret_key"]
-        binance_api_url = data["binance_api_url"]
-
-        run_mode = "yes" if data["run_mode"] == "productive" else "no"  # yes -> prod, no->test
+        exe_mode = "yes" if data["exe_mode"] == "productive" else "no"  # yes -> prod, no->test
         trade_rule = json.loads(data["trade_rule"].file.read())
         candle_interval = data["candle_interval"]
         current_orders = data["current_orders"] # yes -> check, no->skip
+        # client_id = data["client_id"]
 
     if not data:
-        run_mode = input("[app] would u like to start a productive RUN? input 'yes' for productive run or any else for test mode!\r\n: ") 
+        exe_mode = input("[app] would u like to start a productive RUN? input 'yes' for productive run or any else for test mode!\r\n: ") 
 
-    if run_mode.lower() == "yes":
+    if exe_mode.lower() == "yes":
         test_mode = None
     else:
         test_mode = True
     
     logger.info("[app] the run will be in !!! {} !!! mode executed".format("Productive" if test_mode == None else "TEST"))
     
+    config = configparser.ConfigParser()
     if not data:
         try:
             config_file = sys.argv[1]
@@ -245,10 +246,12 @@ async def trading(data=None):
             config_file = fd.askopenfilename(title="!Please select your config file! : ) ")
         
         logger.info(f"[app] the file {config_file} is being used as api config!!!")
-
-        config = configparser.ConfigParser()
         config.read(config_file)
     else:
+        config.read("./config.ini")
+        binance_api_url = config["binance"]["url"]
+        taapi_api_url = config["taapi"]["url"]
+
         config = {
             "binance":{
                 "url": binance_api_url,
