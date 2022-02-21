@@ -1,0 +1,8 @@
+.venv
+.vscode
+__pycache__
+app.log
+build
+server.spec
+package-lock.json
+log
