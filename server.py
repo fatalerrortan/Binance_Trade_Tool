@@ -8,7 +8,7 @@ from aiofile import async_open
 from app import trading, app_close
 from App_Logging import getLogger
 import threading
-
+import json
 
 # from multiprocessing import Process
 
@@ -55,10 +55,14 @@ async def websocket_handler(request):
 
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
-            if msg.data == "detach":
+
+            req = json.loads(msg.data)
+
+            if req["cmd"] == "detach":
+                logger.info("[app] websocket connection closed")
                 await ws.close()
-            if msg.data == "attach":               
-                async with async_open("app.log", 'r') as afp:
+            if req["cmd"] == "attach":               
+                async with async_open(f"log/{req['run_id']}.log", 'r') as afp:
                     while True:
                         line = await afp.readline()
                         if len(line) == 0: 
@@ -67,10 +71,9 @@ async def websocket_handler(request):
                         await ws.send_str(line)
 
         elif msg.type == aiohttp.WSMsgType.ERROR:
-            logger.error('ws connection closed with exception %s' %
-                  ws.exception())
+            logger.error('[app] ws connection closed with exception %s' % ws.exception())
 
-    logger.warning('websocket connection closed')
+    logger.warning('[app] websocket connection closed')
 
     return ws
 

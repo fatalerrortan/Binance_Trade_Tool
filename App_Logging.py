@@ -8,9 +8,9 @@ def logging_file(log_file_dir: str):
     if not os.path.exists("./log"):
         os.mkdir("./log")
         
-    if not os.path.isfile(log_file_dir):
-        f= open('app.log', 'w+')
-        f.close()
+    # if not os.path.isfile(log_file_dir):
+    #     f= open('app.log', 'w+')
+    #     f.close()
         
 def getLogger(fname:str, run_id:str):
     # reset default serverity from warning to debug

@@ -1,15 +1,16 @@
 {   
     "sell": {        
-        "_1": { 
+        "1": { 
             "active": 1,
-            "btc": 48100,
+            "btc": 37700,
             "altcoin": {
-                "mana": 0.05,
-                "fil": 0.05,
-                "doge":0.05
+                "doge": 0.1,
+                "fil": 0.1,
+                "theta":0.1,
+                "icp":0.1
             }
         },
-        "_2": { 
+        "2": { 
             "active": 0,
             "btc": 44800,
             "altcoin": {
@@ -17,7 +18,7 @@
                 "doge":0.05
             }
         },
-        "_3": { 
+        "3": { 
             "active": 0,
             "btc": 42000,
             "altcoin": {
@@ -29,21 +30,24 @@
     "buy": {
         "1": {
             "active": 1,
-            "btc": [45700, 47000],
-            "percentage": 0.1,
+            "btc": [32900, 35900],
+            "percentage": 0.5,
             "altcoin": {
                 "doge": 0.7,
                 "fil": 0.1,
-                "mana": 0.2
+                "theta": 0.1,
+                "icp": 0.1
             }
         },    
         "2": {
             "active": 1,
-            "btc": [44400, 45700],
-            "percentage": 0.2,
+            "btc": [30000, 32900],
+            "percentage": 0.5,
             "altcoin": {
                 "doge": 0.7,
-                "mana": 0.2
+                "fil": 0.1,
+                "theta": 0.1,
+                "icp": 0.1
             }
         },
         "3": {
