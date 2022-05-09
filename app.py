@@ -12,7 +12,7 @@ import math
 import json
 import os
 
-logger = getLogger('app.py')
+logger = None
 
 async def cancel_current_orders(binance):
 
@@ -43,7 +43,6 @@ async def safe_execute(func):
                 await asyncio.sleep(15)
                 continue
             return result
-            break
 
 async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
 
@@ -54,7 +53,8 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
     binance_coins = [ x for x in sell_asset_dict.keys()]
 
     for index, rule in sell_rule.items():
-
+        if os.getenv("run_id") == None:
+            exit(logger.warning('[app] app is stopping!!!'))
         ruled_btc_price = rule["btc"]
         altcoins_to_sell = rule["altcoin"]
         filtered_altcoins_to_sell = {**altcoins_to_sell}
@@ -146,7 +146,8 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
     bottom_index = int(len(buy_rule_filtered))
 
     while True:
-
+        if os.getenv("run_id") == None:
+            exit(logger.warning('[app] app is stopping!!!'))
         await asyncio.sleep(60)
         current_usdt = await usdt_deposit(binance, test_mode)
         current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
@@ -212,30 +213,30 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
             #     logger.error(f"[buy] Exception Case found -> current btc price {current_btc_price}")
 
 async def trading(data=None):
-
+    global logger
+    
     if data:
-        taapi_api_url = data["taapi_api_url"] 
+        logger = getLogger('app.py', os.environ["run_id"])
         taapi_api_key = data["taapi_api_key"]
-
         binance_api_key = data["binance_api_key"]
         binance_secret_key = data["binance_secret_key"]
-        binance_api_url = data["binance_api_url"]
-
-        run_mode = "yes" if data["exe_mode"] == "productive" else "no"  # yes -> prod, no->test
+        exe_mode = "yes" if data["exe_mode"] == "productive" else "no"  # yes -> prod, no->test
         trade_rule = json.loads(data["trade_rule"].file.read())
         candle_interval = data["candle_interval"]
         current_orders = data["current_orders"] # yes -> check, no->skip
+        # client_id = data["client_id"]
 
     if not data:
-        run_mode = input("[app] would u like to start a productive RUN? input 'yes' for productive run or any else for test mode!\r\n: ") 
+        exe_mode = input("[app] would u like to start a productive RUN? input 'yes' for productive run or any else for test mode!\r\n: ") 
 
-    if run_mode.lower() == "yes":
+    if exe_mode.lower() == "yes":
         test_mode = None
     else:
         test_mode = True
     
     logger.info("[app] the run will be in !!! {} !!! mode executed".format("Productive" if test_mode == None else "TEST"))
     
+    config = configparser.ConfigParser()
     if not data:
         try:
             config_file = sys.argv[1]
@@ -243,10 +244,12 @@ async def trading(data=None):
             config_file = fd.askopenfilename(title="!Please select your config file! : ) ")
         
         logger.info(f"[app] the file {config_file} is being used as api config!!!")
-
-        config = configparser.ConfigParser()
         config.read(config_file)
     else:
+        config.read("./config.ini")
+        binance_api_url = config["binance"]["url"]
+        taapi_api_url = config["taapi"]["url"]
+
         config = {
             "binance":{
                 "url": binance_api_url,
@@ -301,7 +304,7 @@ async def trading(data=None):
                             buy(jsonObj["buy"], binance, Taapi_api, interval, test_mode)
                         )
 
-def app_close():
+async def app_close():
     logger.info("[app] app is stopping!!!")
     for t in asyncio.all_tasks():
         task_name = str(t.get_coro())
@@ -312,6 +315,8 @@ def app_close():
                 logger.info("[app] Sell and Buy functions are being cancelled now")
 
 if __name__ == '__main__':
+    os.environ["run_id"] = str(0000)
+    logger = getLogger('app.py', "0000")
     logger.info('[app] app is launching!!!')
     try:
         # os.system('python server.py')
