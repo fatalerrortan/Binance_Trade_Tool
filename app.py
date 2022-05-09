@@ -43,7 +43,6 @@ async def safe_execute(func):
                 await asyncio.sleep(15)
                 continue
             return result
-            break
 
 async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
 
@@ -214,11 +213,10 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
             #     logger.error(f"[buy] Exception Case found -> current btc price {current_btc_price}")
 
 async def trading(data=None):
-
     global logger
-    logger = getLogger('app.py', os.environ["run_id"])
-
+    
     if data:
+        logger = getLogger('app.py', os.environ["run_id"])
         taapi_api_key = data["taapi_api_key"]
         binance_api_key = data["binance_api_key"]
         binance_secret_key = data["binance_secret_key"]
@@ -317,6 +315,8 @@ async def app_close():
                 logger.info("[app] Sell and Buy functions are being cancelled now")
 
 if __name__ == '__main__':
+    os.environ["run_id"] = str(0000)
+    logger = getLogger('app.py', "0000")
     logger.info('[app] app is launching!!!')
     try:
         # os.system('python server.py')
