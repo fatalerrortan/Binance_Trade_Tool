@@ -315,8 +315,10 @@ async def app_close():
                 logger.info("[app] Sell and Buy functions are being cancelled now")
 
 if __name__ == '__main__':
-    os.environ["run_id"] = str(0000)
-    logger = getLogger('app.py', "0000")
+    
+    run_id = str(0000)
+    os.environ["run_id"] = run_id
+    logger = getLogger('app.py', run_id)
     logger.info('[app] app is launching!!!')
     try:
         # os.system('python server.py')
