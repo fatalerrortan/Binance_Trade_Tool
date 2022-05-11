@@ -2,6 +2,7 @@ import os
 import queue
 import logging
 from logging.handlers import QueueHandler, QueueListener
+import sys
         
 def logging_file(log_file_dir: str):
     
@@ -23,9 +24,19 @@ def getLogger(fname:str, run_id:str):
     logging_file(log_file_dir)
     f_handler = logging.FileHandler(log_file_dir)
 
-    s_handler.setLevel(logging.DEBUG)
-    f_handler.setLevel(logging.INFO)
+    try:
+        if sys.argv[3] == "debug":
+            f_handler.setLevel(logging.DEBUG)
+            logger.info(f"[app] logging in Debug mode!")
+        else:
+            f_handler.setLevel(logging.INFO)
+            logger.info(f"[app] logging in Productive mode!")
+    except Exception as e:
+            f_handler.setLevel(logging.INFO)
+            logger.info(f"[app] logging in Productive mode!")
 
+    s_handler.setLevel(logging.DEBUG)
+   
     output_format = '[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s'
     s_format = logging.Formatter(output_format)
     f_format = logging.Formatter(output_format)

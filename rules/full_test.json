@@ -2,7 +2,7 @@
     "sell": {        
         "1": { 
             "active": 1,
-            "btc": 37700,
+            "btc": 28800,
             "altcoin": {
                 "doge": 0.1,
                 "fil": 0.1,
@@ -30,7 +30,7 @@
     "buy": {
         "1": {
             "active": 1,
-            "btc": [32900, 35900],
+            "btc": [29700, 32890],
             "percentage": 0.5,
             "altcoin": {
                 "doge": 0.7,
@@ -40,8 +40,8 @@
             }
         },    
         "2": {
-            "active": 1,
-            "btc": [30000, 32900],
+            "active": 0,
+            "btc": [28900, 29700],
             "percentage": 0.5,
             "altcoin": {
                 "doge": 0.7,

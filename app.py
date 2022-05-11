@@ -47,24 +47,24 @@ async def safe_execute(func):
 async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
 
     if len(sell_rule) == 0:
-        logger.warning("[sell] sell rule not found, sell function will not be executed!")
+        logger.info("[sell] sell rule not found, sell function will not be executed!")
         return
     
     binance_coins = [ x for x in sell_asset_dict.keys()]
 
     for index, rule in sell_rule.items():
         if os.getenv("run_id") == None:
-            exit(logger.warning('[app] app is stopping!!!'))
+            exit(logger.info('[app] app is stopping!!!'))
         ruled_btc_price = rule["btc"]
         altcoins_to_sell = rule["altcoin"]
         filtered_altcoins_to_sell = {**altcoins_to_sell}
         is_active = bool(rule["active"])
         
         if not is_active:
-            logger.warning(f"[sell] the current sell rule {ruled_btc_price} is inactive, skipping to the next sell rule!")
+            logger.info(f"[sell] the current sell rule {ruled_btc_price} is inactive, skipping to the next sell rule!")
             continue
         
-        logger.warning(f"[sell] Current Sell Rule in USE! - when btc price is lower than {ruled_btc_price}, the followed altcoin will be sold")
+        logger.info(f"[sell] Current Sell Rule in USE! - when btc price is lower than {ruled_btc_price}, the followed altcoin will be sold")
       
         for coin, percentage in altcoins_to_sell.items():
 
@@ -73,7 +73,7 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
                 del filtered_altcoins_to_sell[coin]
                 continue
 
-            logger.warning(f"[sell] -> {percentage * 100} % of {coin} will be sold")
+            logger.info(f"[sell] -> {percentage * 100} % of {coin} will be sold")
 
         while True:
             await asyncio.sleep(60)
@@ -81,14 +81,14 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
             current_btc_tp_1_2 = (current_btc_tp[1]["value"] + current_btc_tp[2]["value"]) / 2
             current_btc_tp_0 = current_btc_tp[0]["value"]
 
-            logger.info(f"[sell] average btc typical price of last two {interval} is {current_btc_tp_1_2} usdt.")
+            logger.debug(f"[sell] average btc typical price of last two {interval} is {current_btc_tp_1_2} usdt.")
             
             if Decimal(current_btc_tp_1_2) < Decimal(ruled_btc_price):
                 await asyncio.sleep(60)
                 current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
                 if current_btc_price < Decimal(ruled_btc_price):
                     
-                    logger.warning(f"[sell] the both average btc typical price of last two {interval} {current_btc_tp_1_2} usdt and the current btc price {current_btc_price} usdt are lower than the currently rule {ruled_btc_price} usdt. Sell right NOW!!!")
+                    logger.info(f"[sell] the both average btc typical price of last two {interval} {current_btc_tp_1_2} usdt and the current btc price {current_btc_price} usdt are lower than the currently rule {ruled_btc_price} usdt. Sell right NOW!!!")
 
                     for coin, percentage in filtered_altcoins_to_sell.items():
 
@@ -107,13 +107,13 @@ async def sell(sell_rule, binance, Taapi, sell_asset_dict, interval, test_mode):
                         qty = soll_qty if soll_qty <= ist_qty  else ist_qty
 
                         result = await safe_execute(lambda: binance.place_order(symbol=asset_pair, side='sell', type='MARKET', test_mode=test_mode, quantity=qty))
-                        logger.warning(result)
-                        logger.warning(f"[sell] {percentage * 100} % {coin} - {qty} {coin} was sold!!!")
+                        logger.info(result)
+                        logger.info(f"[sell] {percentage * 100} % {coin} - {qty} {coin} was sold!!!")
                     # break while loop
                     break 
                 
             
-    logger.warning("[sell] All preset BTC typical prices have been triggered.")
+    logger.info("[sell] All preset BTC typical prices have been triggered.")
 
 async def usdt_deposit(binance: object, test_mode): 
     
@@ -123,10 +123,10 @@ async def usdt_deposit(binance: object, test_mode):
             if test_mode:
                 current_usdt = 100000000
             if current_usdt < 10:
-                logger.info(f"[buy] current usdt remain {current_usdt} usdt is lower than 10 usdt. the buy function will not be executed until sell orders are placed, reloading usdt remain in 60 sec")
+                logger.warning(f"[buy] current usdt remain {current_usdt} usdt is lower than 10 usdt. the buy function will not be executed until sell orders are placed, reloading usdt remain in 60 sec")
                 await asyncio.sleep(60)  
             else: 
-                logger.info(f"[buy] current usdt remain {current_usdt} usdt. the buy function is working.")
+                # logger.debug(f"[buy] current usdt remain {current_usdt} usdt. the buy function is working.")
                 return current_usdt
 
 async def buy(buy_rule, binance, Taapi, interval, test_mode):
@@ -147,7 +147,7 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
 
     while True:
         if os.getenv("run_id") == None:
-            exit(logger.warning('[app] app is stopping!!!'))
+            exit(logger.info('[app] app is stopping!!!'))
         await asyncio.sleep(60)
         current_usdt = await usdt_deposit(binance, test_mode)
         current_btc_price = Decimal(await safe_execute(lambda: binance.get_current_pirce("btc")))
@@ -162,22 +162,22 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
                 if last_index:
                     if last_index <= current_index:
                         
-                        logger.info(f"[buy] the current btc price {current_btc_price} is located in low {low} and high {high}, the last rule index {last_index} <= current rule index {current_index}, so waiting for buy signal!")
+                        logger.debug(f"[buy] the current btc price {current_btc_price} is located in low {low} and high {high}, the last rule index {last_index} <= current rule index {current_index}, so waiting for buy signal!")
                         last_index = current_index
                         break
            
                     elif last_index > current_index:
                         
-                        logger.warning(f"[buy] the current btc price {current_btc_price} is located in low {low} and high {high}, the last rule index {last_index} > current rule index {current_index}, continue to compare current btc typical price!")                       
+                        logger.debug(f"[buy] the current btc price {current_btc_price} is located in low {low} and high {high}, the last rule index {last_index} > current rule index {current_index}, continue to compare current btc typical price!")                       
 
                         current_btc_tp = await safe_execute(lambda: Taapi.get_typprice(exchange='binance', symbol='BTC/USDT', interval=interval, backtracks=1)) 
                         current_btc_tp = Decimal(current_btc_tp[0]["value"])
                         
                         if not current_btc_tp > low:
-                            logger.warning(f"[buy] the current btc typical price {current_btc_tp} < current low {low}, it wasn't a real bull break. continue...")
+                            logger.debug(f"[buy] the current btc typical price {current_btc_tp} < current low {low}, it wasn't a real bull break. continue...")
                             break                        
                         
-                        logger.warning(f"[buy] the current btc typical price {current_btc_tp} > current low {low}, the following buy will be executed immediately!!!")                       
+                        logger.info(f"[buy] the current btc typical price {current_btc_tp} > current low {low}, the following buy will be executed immediately!!!")                       
 
                         percentage = Decimal(rule["percentage"])
                         usdt_current_interval = current_usdt * percentage
@@ -188,25 +188,25 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
                             usdt = soll_usdt if soll_usdt >= 10 else None
                             if usdt:
                                 result = await safe_execute(lambda: binance.place_order(symbol=asset_pair, side='buy', type='MARKET', test_mode=test_mode, quoteOrderQty=usdt))
-                                logger.warning(result)
-                                logger.warning(f"[buy] {pct * 100} % usdt - {usdt} usdt - was used to buy {coin}!!!")
+                                logger.info(result)
+                                logger.info(f"[buy] {pct * 100} % usdt - {usdt} usdt - was used to buy {coin}!!!")
                             else:
                                 logger.warning(f"[buy] quoteOrderQty of {coin} order is {soll_usdt} usdt, lower than 10 usdt, skipping to the next coin!")                       
                         last_index = current_index
                         break
                 else:
-                    logger.info(f"[buy] the current btc price {current_btc_price} and the last index was not initilized, waiting for buy signal!")
+                    logger.debug(f"[buy] the current btc price {current_btc_price} and the last index was not initilized, waiting for buy signal!")
                     last_index = current_index
                     break
             
             elif current_index == 1 and current_btc_price > high:
 
-                logger.info(f"[buy] the current btc price {current_btc_price} is !above! the all rule intervals, waiting for buy signal!!")
+                logger.debug(f"[buy] the current btc price {current_btc_price} is !above! the all rule intervals, waiting for buy signal!!")
                 break
 
             elif current_index == bottom_index and current_btc_price < low:
 
-                logger.info(f"[buy] the current btc price {current_btc_price} is !below! the all rule intervals, waiting for buy signal!!")
+                logger.debug(f"[buy] the current btc price {current_btc_price} is !below! the all rule intervals, waiting for buy signal!!")
                 break
         
             # else: 
@@ -316,7 +316,7 @@ async def app_close():
 
 if __name__ == '__main__':
     
-    run_id = str(0000)
+    run_id = "0000"
     os.environ["run_id"] = run_id
     logger = getLogger('app.py', run_id)
     logger.info('[app] app is launching!!!')
