@@ -4,6 +4,7 @@
 __pycache__
 app.log
 build
+dist
 server.spec
 package-lock.json
 log
