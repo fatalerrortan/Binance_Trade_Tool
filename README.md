@@ -1,4 +1,3 @@
-
 # Automatic Binance Trade Tool
 a tool to trade crypto currency automatically in binance according to your own defined events and rules, which will be triggerd by compositive comparison using current, average and typical prices.
 
