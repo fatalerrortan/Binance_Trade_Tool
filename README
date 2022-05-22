@@ -113,14 +113,14 @@ Please see the release page for details
 
 ## Usage
 
-1. Just double click the program that you downloaded from the release page. then a console will popup to ask you to specify the run mode, productive or test? in test mode the program will treat your own SELL event and rules based on your real asset on Binance but not really do the transactions.  For your Buy events and rules the program will setup a virtual account you with 100,000,000 USDT. so feel free to test your crazy ideas by choosing the Test Mode.
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+1. Just double click the program that you downloaded from the release page. then a console will popup to ask you to specify the run mode, productive or test? in test mode the program will treat your own SELL event and rules based on your real asset on Binance but not really do any transactions. For your Buy events and rules the program will setup a virtual account you with 100,000,000 USDT. so feel free to test your crazy ideas by choosing the Test Mode.
+![App Screenshot](https://github.com/fatalerrortan/Binance_Trade_Tool/blob/dev_api_websocket/pic/test_mode.png?raw=true)
 
 2. after choosing the run mode two file selectors will popup to help you specifing your config.ini and rule file respectively.Immediately afterwards, your assets on the Binance will be read and printed out on the screen
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+![App Screenshot](https://github.com/fatalerrortan/Binance_Trade_Tool/blob/dev_api_websocket/pic/config.png?raw=true)
 
 3. You will then be asked to specify a candlestick timeframe on which your events and rules should be triggered. The k-line movements in different time frames can be found on tradingview.com. The currently accepted parameters are 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M. The recommended value is 5m. then the current Rules in USE will be printed out on the screen.
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+![App Screenshot](https://github.com/fatalerrortan/Binance_Trade_Tool/blob/dev_api_websocket/pic/timeframe.png?raw=true)
 
 4. (optional) the program can also be executed from terminal with three arguments 
 
@@ -135,7 +135,7 @@ example ``` ./app /home/test/config.ini ../rule.json debug ```
 
 ## Screenshots
 
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+![App Screenshot](https://github.com/fatalerrortan/Binance_Trade_Tool/blob/dev_api_websocket/pic/screenshot.png?raw=true)
 
 
 ## License
