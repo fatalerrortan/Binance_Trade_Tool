@@ -4,8 +4,8 @@
     },
     "buy": {
         "1": {
-            "active": 1,
-            "btc": [48300, 52480],
+            "active": 2,
+            "btc": [18700, 19000],
             "percentage": 0.1,
             "altcoin": {
                 "doge": 0.7,
@@ -15,7 +15,7 @@
         },    
         "2": {
             "active": 1,
-            "btc": [42000, 48300],
+            "btc": [18500, 18700],
             "percentage": 0.2,
             "altcoin": {
                 "doge": 0.7,

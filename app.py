@@ -137,6 +137,7 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
     for index, rule in buy_rule.items():
         is_active = bool(rule["active"])
         if is_active:
+            rule["limit"] = 0
             buy_rule_filtered[index] = rule
     
     # check if buy rule of the json file is empty? if true terminate the buy coroutine
@@ -166,17 +167,22 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
                         last_index = current_index
                         break
            
-                    elif last_index > current_index:
-                        
+                    elif last_index > current_index:             
+
                         logger.debug(f"[buy] the current btc price {current_btc_price} is located in low {low} and high {high}, the last rule index {last_index} > current rule index {current_index}, continue to compare current btc typical price!")                       
 
                         current_btc_tp = await safe_execute(lambda: Taapi.get_typprice(exchange='binance', symbol='BTC/USDT', interval=interval, backtracks=1)) 
                         current_btc_tp = Decimal(current_btc_tp[0]["value"])
-                        
+
                         if not current_btc_tp > low:
                             logger.debug(f"[buy] the current btc typical price {current_btc_tp} < current low {low}, it wasn't a real bull break. continue...")
                             break                        
                         
+                        if int(rule["limit"]) >= int(rule["active"]):
+                            logger.info(f"[buy] the trade limit of the current rule -> {rule['active']} <- was already reached! continue...")      
+                            last_index = current_index
+                            break    
+
                         logger.info(f"[buy] the current btc typical price {current_btc_tp} > current low {low}, the following buy will be executed immediately!!!")                       
 
                         percentage = Decimal(rule["percentage"])
@@ -193,6 +199,8 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
                             else:
                                 logger.warning(f"[buy] quoteOrderQty of {coin} order is {soll_usdt} usdt, lower than 10 usdt, skipping to the next coin!")                       
                         last_index = current_index
+                        buy_rule_filtered[index]["limit"] += 1
+                        logger.info(f"[buy] Current Rule Trade Limit {rule['limit']} / {rule['active']}")      
                         break
                 else:
                     logger.debug(f"[buy] the current btc price {current_btc_price} and the last index was not initilized, waiting for buy signal!")
@@ -319,9 +327,10 @@ if __name__ == '__main__':
     run_id = "0000"
     os.environ["run_id"] = run_id
     logger = getLogger('app.py', run_id)
+    err_logger = getLogger('err', run_id)
     logger.info('[app] app is launching!!!')
     try:
         # os.system('python server.py')
         asyncio.run(trading())
     except Exception as e:
-        logger.error(traceback.format_exc())
+        err_logger.error(traceback.format_exc())

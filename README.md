@@ -50,7 +50,7 @@ a tool to trade crypto currency automatically in binance according to your own d
     "sell": {},
     "buy": {
         "1": {
-            "active": 1,
+            "active": 2,
             "btc": [29700, 32890],
             "percentage": 0.5,
             "altcoin": {
@@ -61,7 +61,7 @@ a tool to trade crypto currency automatically in binance according to your own d
             }
         },    
         "2": {
-            "active": 0,
+            "active": 3,
             "btc": [28900, 29700],
             "percentage": 0.5,
             "altcoin": {
@@ -85,8 +85,10 @@ a tool to trade crypto currency automatically in binance according to your own d
 }
 ```
 - In the buy block each child block corresponds to a set of our buy event and rule.
-    - **active**: see the same attribute in the sell block
     - **btc**: this attribute expect an interval of the BTCUSDT. When the current BTCUSDT first breaks down the the range and then returns to this range from bottom and simultaneously the current typical btc price is also within this range, x% of USDT will be used to buy the coins that were written in the "altcoin" block.
+     - **active**:  「N」
+        - if value = 0: the rule is inactive
+        - if value > 0: indicates the number of transactions allowed in the pre-defined interval
     - **percentage**: the value of this attribute specifies **x%** of USDT
     - **altcoin**: the coins that are written in this block will be bought according to the assigned percentage, once the trade event defined before is triggered.
 - Similarly, the program will not perform any buy transactions, if the entire buy block is empty.
@@ -127,7 +129,8 @@ example ``` ./app /home/test/config.ini ../rule.json debug ```
    
     - arg 1: directorty of the config.ini 
     - arg 2: directorty of your trade rules 
-    - arg 3: "debug" - in the debug mode all app output will be written in the log/0000.log, otherwise only the transaction records when and what was be traded.
+    - arg 3: "debug" - in the debug mode all app output (incl. price trending) will be written in the log/0000.log, otherwise only the transaction records when and what was be traded.
+        - network and api errors will be logged in log/error_000.og
 
 example ``` ./app /home/test/config.ini ../rule.json debug ```
 
