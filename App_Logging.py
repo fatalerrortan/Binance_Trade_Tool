@@ -3,6 +3,7 @@ import queue
 import logging
 from logging.handlers import QueueHandler, QueueListener
 import sys
+from tkinter.messagebox import NO
         
 def logging_file(log_file_dir: str):
     
@@ -16,13 +17,29 @@ def logging_file(log_file_dir: str):
 def getLogger(fname:str, run_id:str):
     # reset default serverity from warning to debug
     logging.basicConfig(level=logging.NOTSET)
-    logger = logging.getLogger(fname)
+    output_format = '[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s'
+    format = logging.Formatter(output_format)
 
+    if fname == "err":
+        logger = logging.getLogger("err")
+        logger.propagate = False
+        log_error_dir = f'./log/error_{run_id}.log'
+        logging_file(log_error_dir)
+        e_handler = logging.FileHandler(log_error_dir)
+        e_handler.setLevel(logging.ERROR)
+        e_handler.setFormatter(format)
+        logger.addHandler(e_handler)
+
+        return logger
+
+    logger = logging.getLogger(fname)
+    logger.propagate = False
     s_handler = logging.StreamHandler()
     # client_id = os.environ["client_id"]
     log_file_dir = f'./log/{run_id}.log'
     logging_file(log_file_dir)
     f_handler = logging.FileHandler(log_file_dir)
+    
 
     try:
         if sys.argv[3] == "debug":
@@ -36,43 +53,13 @@ def getLogger(fname:str, run_id:str):
             logger.info(f"[app] logging in Productive mode!")
 
     s_handler.setLevel(logging.DEBUG)
-   
-    output_format = '[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s'
-    s_format = logging.Formatter(output_format)
-    f_format = logging.Formatter(output_format)
 
-    s_handler.setFormatter(s_format)
-    f_handler.setFormatter(f_format)
-    
-    logger.propagate = False
+    s_handler.setFormatter(format)
+    f_handler.setFormatter(format)
     
     logger.addHandler(s_handler)
     logger.addHandler(f_handler)
+    
 
     return logger
 
-def async_getLogger(fname:str):
-    
-    log_queue = queue.Queue(-1)
-    queue_handler = QueueHandler(log_queue)
-
-    logging.basicConfig(level=logging.NOTSET)
-    
-    logger = logging.getLogger(fname)
-    logger.propagate = False
-    logger.addHandler(queue_handler)
-
-    console_handler = logging.StreamHandler()
-    formatter = '[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s'
-    console_handler.setFormatter(formatter)
-    console_handler.setLevel(logging.DEBUG)
-
-    file_handler = logging.FileHandler("app.log")
-    file_handler.setFormatter(formatter)
-    file_handler.setLevel(logging.INFO)
-
-    listener = QueueListener(log_queue, console_handler, file_handler)
-    listener.start()
-    # listener.stop()
-
-    return logger
