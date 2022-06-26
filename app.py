@@ -39,7 +39,7 @@ async def safe_execute(func):
                     raise Exception(result["error"])
             except Exception as e:
                 # logger.error(e)
-                logger.error(traceback.format_exc())
+                err_logger.error(traceback.format_exc())
                 await asyncio.sleep(15)
                 continue
             return result
@@ -179,8 +179,11 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
                             break                        
                         
                         if int(rule["limit"]) >= int(rule["active"]):
-                            logger.info(f"[buy] the trade limit of the current rule -> {rule['active']} <- was already reached! continue...")      
+                            logger.info(f"[buy] the trade limit of the {index}. rule [{low}, {high}] -> {rule['active']} <- was already reached! continue...")      
                             last_index = current_index
+                            
+                            logger.info(print(buy_rule_filtered))
+                            
                             break    
 
                         logger.info(f"[buy] the current btc typical price {current_btc_tp} > current low {low}, the following buy will be executed immediately!!!")                       
