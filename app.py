@@ -181,9 +181,6 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
                         if int(rule["limit"]) >= int(rule["active"]):
                             logger.info(f"[buy] the trade limit of the {index}. rule [{low}, {high}] -> {rule['active']} <- was already reached! continue...")      
                             last_index = current_index
-                            
-                            logger.info(print(buy_rule_filtered))
-                            
                             break    
 
                         logger.info(f"[buy] the current btc typical price {current_btc_tp} > current low {low}, the following buy will be executed immediately!!!")                       
@@ -203,7 +200,7 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
                                 logger.warning(f"[buy] quoteOrderQty of {coin} order is {soll_usdt} usdt, lower than 10 usdt, skipping to the next coin!")                       
                         last_index = current_index
                         buy_rule_filtered[index]["limit"] += 1
-                        logger.info(f"[buy] Current Rule Trade Limit {rule['limit']} / {rule['active']}")      
+                        logger.info(f"[buy] the {index}. Rule Trade Limit {rule['limit']} / {rule['active']}")      
                         break
                 else:
                     logger.debug(f"[buy] the current btc price {current_btc_price} and the last index was not initilized, waiting for buy signal!")
@@ -216,7 +213,7 @@ async def buy(buy_rule, binance, Taapi, interval, test_mode):
                 break
 
             elif current_index == bottom_index and current_btc_price < low:
-
+                last_index = bottom_index + 1
                 logger.debug(f"[buy] the current btc price {current_btc_price} is !below! the all rule intervals, waiting for buy signal!!")
                 break
         
